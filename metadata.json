@@ -1,0 +1,6 @@
+{
+  "name": "算力有限公司",
+  "description": "基于游戏化裂变的分布式算力代工与挖矿生态，内置算力共振塔、矿机商城、算力碎片对换与冷却液维护系统。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
