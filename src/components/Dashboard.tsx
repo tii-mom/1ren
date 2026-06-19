@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { UserStats, TaskState, ActiveMiner } from "../types";
+import { UserStats, TaskState, ActiveMiner, MiningRecord } from "../types";
 import { 
   Zap, Cpu, Award, Activity, Gauge, 
   Smartphone, KeyRound, AlertTriangle, Coins, Users, ArrowUpRight, ArrowDownRight, Clock
@@ -12,6 +12,7 @@ interface DashboardProps {
   stats: UserStats;
   tasks: TaskState;
   activeMiners: ActiveMiner[];
+  records: MiningRecord[];
   onCompleteTask: (taskKey: "watchAd" | "likeContent" | "shareMoments") => void;
   onTriggerBuff: () => void;
   onSynthesize: () => void;
@@ -39,6 +40,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   stats,
   tasks,
   activeMiners,
+  records,
   onCompleteTask,
   onTriggerBuff,
   onSynthesize,
@@ -159,6 +161,83 @@ export const Dashboard: React.FC<DashboardProps> = ({
       percent: Math.round((metCount / 4) * 100)
     };
   }, [stats.level, stats.accumulatedFragments, activeMiners, stats.r1Balance]);
+
+  const hasIssuedToken = useMemo(() => {
+    try {
+      const saved = localStorage.getItem("r1_user_issued_tokens");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return Array.isArray(parsed) && parsed.length >= 1;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return false;
+  }, [stats]);
+
+  const steps = useMemo(() => {
+    const runningMinerCount = activeMiners.filter(m => m.status !== "stopped").length;
+    const step1Done = runningMinerCount >= 1;
+    const minerHasProduced = activeMiners.some(m => (m.accumulatedRewards || 0) > 0);
+
+    const step2Done = step1Done && (minerHasProduced || stats.accumulatedFragments > 50);
+    const step3Done = stats.totalSynthesized > 0 || records.some(r => 
+      r.type === "synthesize" || 
+      (r.type === "trade" && r.description.includes("AI Token")) || 
+      r.description.includes("平台回收")
+    );
+    const step4Done = records.some(r => r.description.includes("买入") && r.description.includes("R1")) || 
+      records.some(r => r.description.includes("质押锁仓") && r.description.includes("R1"));
+    const step5Done = hasIssuedToken;
+
+    return [
+      {
+        title: "部署第一台设备",
+        description: "前往机房并网部署第一台算力设备，开始在线产出 AI Token。",
+        done: step1Done,
+        buttonText: "去部署",
+        onAction: () => setCurrentTab("store")
+      },
+      {
+        title: "产出 AI Token",
+        description: "开启您的设备，或保持在线产出超过 50 个 AI Token 额度。",
+        done: step2Done,
+        buttonText: "去产出",
+        onAction: () => {
+          if (!step1Done) {
+            setCurrentTab("store");
+          } else {
+            setCurrentTab("home");
+          }
+        }
+      },
+      {
+        title: "生成 API 或出售 AI Token",
+        description: "在一键出售中模拟回收变现，或使用 AI Token 合成生成 API/URL Key。",
+        done: step3Done,
+        buttonText: "生成 / 变现",
+        onAction: () => setCurrentTab("home")
+      },
+      {
+        title: "持有 R1 权益",
+        description: "前往交易区使用 USDT 买入 R1 平台权益 Token，或进行锁仓质押。",
+        done: step4Done,
+        buttonText: "去交易",
+        onAction: () => setCurrentTab("exchange")
+      },
+      {
+        title: "申请发行公司 Token",
+        description: "前往发行中心申请并成功模拟发行您自己的 1人算力公司 Token。",
+        done: step5Done,
+        buttonText: "去发行",
+        onAction: () => setCurrentTab("launch")
+      }
+    ];
+  }, [activeMiners, records, stats, hasIssuedToken, setCurrentTab]);
+
+  const completedStepsCount = useMemo(() => {
+    return steps.filter(s => s.done).length;
+  }, [steps]);
 
   // Quick sell execution
   const handleQuickSellSubmit = () => {
@@ -308,6 +387,74 @@ export const Dashboard: React.FC<DashboardProps> = ({
               用户自己的“1人算力公司”发行的影子项目资产。需通过平台对设备并网记录、AI Token 历史产出及 R1 锁定押金进行严格审核方可挂牌。
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* 🚀 我的 1人算力公司进度 */}
+      <div className="bg-gradient-to-br from-[#0c0f24]/90 to-[#04060f]/90 border border-cyan-500/20 rounded-3xl p-6 backdrop-blur-md shadow-[0_8px_32px_rgba(0,0,0,0.5)]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <h2 className="text-base font-black text-white flex items-center gap-2 tracking-wide">
+              <Cpu className="text-cyan-400 size-5 animate-pulse" />
+              我的 1人算力公司进度
+            </h2>
+            <p className="text-xs text-slate-400 mt-1 font-sans">
+              从设备并网到发行公司 Token，按步骤完成你的第一家公司启动路径。
+            </p>
+          </div>
+          <div className="bg-cyan-500/10 border border-cyan-500/25 rounded-2xl px-4 py-2 flex items-center gap-2 self-start md:self-auto">
+            <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-widest uppercase">公司筹备进度</span>
+            <span className="text-sm font-mono font-black text-white">{completedStepsCount} / 5</span>
+          </div>
+        </div>
+
+        {/* Stepper / Vertical Timeline */}
+        <div className="relative border-l border-white/10 ml-4 pl-8 space-y-6">
+          {steps.map((step, index) => {
+            const isCompleted = step.done;
+            return (
+              <div key={index} className="relative group">
+                {/* Connector dot */}
+                <div className={`absolute -left-[41px] top-1.5 size-6 rounded-full border flex items-center justify-center transition-all duration-300 ${
+                  isCompleted 
+                    ? "bg-emerald-500/20 border-emerald-500 text-emerald-400 shadow-[0_0_10px_rgba(16,185,129,0.3)]" 
+                    : "bg-slate-900 border-white/20 text-slate-500"
+                }`}>
+                  {isCompleted ? (
+                    <span className="text-xs font-black">✓</span>
+                  ) : (
+                    <span className="text-[10px] font-bold font-mono">{index + 1}</span>
+                  )}
+                </div>
+
+                {/* Step content */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 bg-white/[0.02] border border-white/[0.04] rounded-2xl hover:bg-white/[0.04] transition-all duration-200">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-cyan-400 font-mono font-bold tracking-wider block">STEP 0{index + 1}</span>
+                    <h3 className="text-sm font-extrabold text-slate-200">{step.title}</h3>
+                    <p className="text-xs text-slate-400 leading-relaxed font-sans">{step.description}</p>
+                  </div>
+
+                  {/* Action button / Status */}
+                  <div className="flex items-center min-h-[44px]">
+                    {isCompleted ? (
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl flex items-center gap-1">
+                        <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        已完成
+                      </span>
+                    ) : (
+                      <button
+                        onClick={step.onAction}
+                        className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 text-xs font-black rounded-xl active:scale-95 shadow-[0_4px_12px_rgba(6,182,212,0.2)] hover:shadow-[0_4px_16px_rgba(6,182,212,0.3)] transition-all min-h-[44px] flex items-center justify-center cursor-pointer"
+                      >
+                        {step.buttonText}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
