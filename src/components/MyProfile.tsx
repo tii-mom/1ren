@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { UserStats, ActiveMiner, MiningRecord, UserLevel } from "../types";
 import { MOCK_REFERRALS } from "../utils/storage";
 import { 
@@ -46,6 +46,7 @@ interface MyProfileProps {
   stats: UserStats;
   activeMiners: ActiveMiner[];
   records: MiningRecord[];
+  usdtBalance: number; // Simulated USDT balance (NEW!)
   onSynthesize: () => void;
   onBuyCoolant: (costInFragments: number) => void;
   onApplyCoolant: (minerId: string) => void;
@@ -59,6 +60,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   stats,
   activeMiners,
   records,
+  usdtBalance,
   onBuyCoolant,
   onApplyCoolant,
   onClaimDemoMiner,
@@ -75,6 +77,19 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   const [exportPhase, setExportPhase] = useState<"idle" | "pairing" | "checking" | "broadcasting" | "solidifying" | "ready">("ready");
   const [copiedExport, setCopiedExport] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<any | null>(null);
+
+  const userIssuedTokens = useMemo(() => {
+    const saved = localStorage.getItem("r1_user_issued_tokens");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        console.warn("Error parsing user issued tokens in MyProfile:", e);
+      }
+    }
+    return [];
+  }, [subTab]); // reload when subTab switches or renders
 
   const handleOpenExport = () => {
     setShowExportModal(true);
@@ -212,7 +227,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
   const getRecordTagName = (type: MiningRecord["type"]) => {
     switch(type) {
-      case "mining": return "物理日结";
+      case "mining": return "AI Token 产出";
       case "resonance": return "团队加权";
       case "synthesize": return "凭证生成";
       case "coolant": return "设备维护";
@@ -326,6 +341,72 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
       {subTab === "assets" && (
         <div className="space-y-6 animate-fade-in">
+          {/* Split Balances Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Card 1: AI Token */}
+            <div className="bg-gradient-to-br from-[#0c0f24] to-[#04060f] border border-cyan-500/20 rounded-2xl p-4.5 relative overflow-hidden backdrop-blur-md">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-cyan-500/[0.02] rounded-full blur-xl pointer-events-none" />
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-wider">AI Token 余额</span>
+                <Cpu className="size-4 text-cyan-400" />
+              </div>
+              <div className="text-base sm:text-lg font-mono font-black text-cyan-400 text-glow-cyan flex items-baseline gap-1">
+                {stats.hashFragments.toFixed(4)}
+                <span className="text-[10px] font-normal text-slate-500">AI</span>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-1 leading-normal">
+                模拟设备 + API 权益产出额度
+              </p>
+            </div>
+
+            {/* Card 2: R1 Balance */}
+            <div className="bg-gradient-to-br from-[#1a130c] to-[#0a0805] border border-amber-500/20 rounded-2xl p-4.5 relative overflow-hidden backdrop-blur-md">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-amber-500/[0.02] rounded-full blur-xl pointer-events-none" />
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-wider">R1 权益余额</span>
+                <Coins className="size-4 text-amber-400 icon-glow-amber" />
+              </div>
+              <div className="text-base sm:text-lg font-mono font-black text-amber-400 text-glow-gold flex items-baseline gap-1">
+                {(stats.r1Balance || 0).toFixed(4)}
+                <span className="text-[10px] font-normal text-slate-500">R1</span>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-1 leading-normal">
+                平台权益、锁仓及影子发行凭证
+              </p>
+            </div>
+
+            {/* Card 3: USDT Balance */}
+            <div className="bg-gradient-to-br from-[#0c1c14] to-[#040906] border border-emerald-500/20 rounded-2xl p-4.5 relative overflow-hidden backdrop-blur-md">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-emerald-500/[0.02] rounded-full blur-xl pointer-events-none" />
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-wider">USDT 模拟金</span>
+                <Coins className="size-4 text-emerald-400" />
+              </div>
+              <div className="text-base sm:text-lg font-mono font-black text-emerald-400 text-glow-emerald flex items-baseline gap-1">
+                {usdtBalance.toFixed(2)}
+                <span className="text-[10px] font-normal text-slate-500">USDT</span>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-1 leading-normal">
+                平台充值、变现与交易模拟金
+              </p>
+            </div>
+
+            {/* Card 4: Company Token */}
+            <div className="bg-gradient-to-br from-[#130c24] to-[#08050f] border border-purple-500/20 rounded-2xl p-4.5 relative overflow-hidden backdrop-blur-md">
+              <div className="absolute top-0 right-0 w-16 h-16 bg-purple-500/[0.02] rounded-full blur-xl pointer-events-none" />
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-wider">已发行公司 Token</span>
+                <Layers className="size-4 text-purple-400" />
+              </div>
+              <div className="text-base sm:text-lg font-mono font-black text-purple-400 text-glow-purple flex items-baseline gap-1">
+                {userIssuedTokens.length}
+                <span className="text-[10px] font-normal text-slate-500">个</span>
+              </div>
+              <p className="text-[9px] text-slate-400 mt-1 leading-normal">
+                您发行的 1人公司 影子资产
+              </p>
+            </div>
+          </div>
           {/* Equipment slot overview */}
           <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-305">
             <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/[0.02] to-violet-500/[0.02] opacity-50 pointer-events-none" />
@@ -895,16 +976,16 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                 </h3>
               </div>
               <p className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
-                Token 可用于生成 API/URL，也可以在满足基础条件后提交平台回收申请。
+                AI Token 可用于生成 API/URL，也可以在满足基础条件后提交平台回收申请。
               </p>
 
               <div className="space-y-3.5 mb-5">
                 <div className="bg-black/35 border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
                   <div className="space-y-1">
-                    <span className="text-[9px] text-slate-500 block font-mono uppercase tracking-wider font-bold">条件 1：可用 Token</span>
+                    <span className="text-[9px] text-slate-500 block font-mono uppercase tracking-wider font-bold">条件 1：可用 AI Token</span>
                     <div className="flex items-baseline gap-1.5">
                       <span className="text-sm font-mono font-black text-white">{stats.hashFragments.toFixed(1)}</span>
-                      <span className="text-[10px] text-slate-500">/ 500.0 Token</span>
+                      <span className="text-[10px] text-slate-500">/ 500.0 AI Token</span>
                     </div>
                   </div>
                   {stats.hashFragments >= 500 ? (
@@ -946,14 +1027,14 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               ) : (
                 <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-2xl flex items-center gap-2.5">
                   <Lock className="size-4 shrink-0 text-red-400 animate-pulse" />
-                  <span className="font-medium">暂未满足回收条件。请继续产出 Token 或激活直属节点。</span>
+                  <span className="font-medium">暂未满足回收条件。请继续产出 AI Token 或激活直属节点。</span>
                 </div>
               )}
 
               <button
                 onClick={() => {
                   if (stats.hashFragments >= 500 && stats.directReferrals >= 1) {
-                    alert(`回收申请已提交。申请数量 ${(stats.hashFragments).toFixed(1)} Token，模拟手续费 1.5%。`);
+                    alert(`回收申请已提交。申请数量 ${(stats.hashFragments).toFixed(1)} AI Token，模拟手续费 1.5%。`);
                     if (onUpdateSimulatedStats) {
                       onUpdateSimulatedStats(prev => ({
                         ...prev,

@@ -47,8 +47,9 @@ export interface Referral {
 }
 
 export interface UserStats {
-  hashFragments: number; // 算力碎片 quantity
+  hashFragments: number; // AI Token balance (was hashFragments)
   hashCrystals: number;  // 算力晶体 quantity
+  r1Balance: number;     // R1 Token balance (NEW!)
   level: UserLevel;
   baseHashpower: number; // 个人基础算力 (T)
   teamHashpower: number; // 团队加成算力 (T)

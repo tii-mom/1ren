@@ -131,7 +131,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
       setUsdtInput(mockCost.toFixed(2));
     } else {
       // autofill sell using 50% of R1
-      const mockR1 = stats.hashFragments * 0.5;
+      const mockR1 = (stats.r1Balance || 0) * 0.5;
       setR1Input(mockR1.toFixed(4));
     }
   };
@@ -142,7 +142,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
       const targetUsdt = usdtBalance * pct / 100;
       setUsdtInput(targetUsdt > 0.01 ? targetUsdt.toFixed(2) : "0");
     } else {
-      const targetR1 = stats.hashFragments * pct / 100;
+      const targetR1 = (stats.r1Balance || 0) * pct / 100;
       setR1Input(targetR1 > 0.0001 ? targetR1.toFixed(4) : "0");
     }
   };
@@ -393,6 +393,14 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
         {/* Right Side: Trade Form (交易表单) */}
         <div className="md:col-span-7 bg-slate-950/60 border border-white/10 rounded-3xl p-6 backdrop-blur-md space-y-5">
           
+          {/* Note: R1 is platform utility token */}
+          <div className="bg-[#3b82f6]/10 border border-[#3b82f6]/20 text-[#60a5fa] text-[11px] p-3.5 rounded-2xl leading-relaxed flex items-start gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#60a5fa] shrink-0 mt-1.5 animate-pulse" />
+            <span>
+              <b>资产提示：</b>R1 为平台权益 Token，无法由模拟设备直接产出。您可通过此交易市场以模拟 USDT 参与买入/卖出，或通过裂变与运营活动获取。
+            </span>
+          </div>
+
           {/* BUY/SELL Tabs */}
           <div className="grid grid-cols-2 p-1 bg-black/40 border border-white/5 rounded-2xl">
             <button
@@ -458,8 +466,8 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                 </>
               ) : (
                 <>
-                  <span>R1 Token 余额:</span>
-                  <span className="text-white font-bold">{stats.hashFragments.toFixed(4)} R1</span>
+                  <span>R1 权益余额:</span>
+                  <span className="text-white font-bold">{(stats.r1Balance || 0).toFixed(4)} R1</span>
                 </>
               )}
             </div>

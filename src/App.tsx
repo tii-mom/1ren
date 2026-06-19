@@ -51,61 +51,88 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Shared unified transaction handler for R1/USDT spot exchange
-  const handleExchangeTrade = (type: "buy" | "sell", amount: number, price: number): boolean => {
+  // Shared unified transaction handler for R1/USDT spot exchange and platform AI Token buybacks
+  const handleExchangeTrade = (type: "buy" | "sell", amount: number, price: number, assetType: "r1" | "ai" = "r1"): boolean => {
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(price) || price <= 0) {
       triggerNotification("交易失败", "输入的交易数量或报价无效。", "warn");
       return false;
     }
     const feePct = 0.003; // 0.3% commission fee
     
-    if (type === "buy") {
-      // amount is the quantity of USDT the user pays
-      if (usdtBalance < amount) {
-        triggerNotification("余额不足", `买入所需 ${amount.toFixed(2)} USDT 超出您的模拟金余额。`, "warn");
-        return false;
+    if (assetType === "ai") {
+      if (type === "sell") {
+        if (stats.hashFragments < amount) {
+          triggerNotification("额度不足", `变现所需 ${amount.toFixed(4)} AI Token 超出您的余额。`, "warn");
+          return false;
+        }
+        
+        const totalSold = amount;
+        const usdtReceivedRaw = totalSold * price;
+        const fee = usdtReceivedRaw * feePct;
+        const usdtReceivedNet = usdtReceivedRaw - fee;
+        
+        setStats(prev => ({
+          ...prev,
+          hashFragments: Math.max(0, prev.hashFragments - totalSold)
+        }));
+        setUsdtBalance(prev => prev + usdtReceivedNet);
+        
+        const logDesc = `[平台回收] 出售 ${totalSold.toFixed(4)} AI Token @ ${price.toFixed(4)} USDT`;
+        addRecordLog("trade", totalSold, logDesc);
+        
+        triggerNotification("平台变现已撮合", `成功向平台出售 ${totalSold.toFixed(4)} AI Token (扣除 0.3% 手续费)。`, "success");
+        return true;
       }
-      
-      const totalCost = amount;
-      const r1ReceivedRaw = totalCost / price;
-      const fee = r1ReceivedRaw * feePct;
-      const r1ReceivedNet = r1ReceivedRaw - fee;
-      
-      setUsdtBalance(prev => prev - totalCost);
-      setStats(prev => ({
-        ...prev,
-        hashFragments: prev.hashFragments + r1ReceivedNet,
-        accumulatedFragments: prev.accumulatedFragments + r1ReceivedNet
-      }));
-      
-      const logDesc = `[交易市场] 买入 ${r1ReceivedNet.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
-      addRecordLog("trade", r1ReceivedNet, logDesc);
-      
-      triggerNotification("买入交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格买入 ${r1ReceivedNet.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
-      return true;
+      return false;
     } else {
-      // amount is the quantity of R1 the user sells
-      if (stats.hashFragments < amount) {
-        triggerNotification("Token 不足", `卖出所需 ${amount.toFixed(4)} R1 超出您的 R1 Token 余额。`, "warn");
-        return false;
+      if (type === "buy") {
+        // amount is the quantity of USDT the user pays
+        if (usdtBalance < amount) {
+          triggerNotification("余额不足", `买入所需 ${amount.toFixed(2)} USDT 超出您的模拟金余额。`, "warn");
+          return false;
+        }
+        
+        const totalCost = amount;
+        const r1ReceivedRaw = totalCost / price;
+        const fee = r1ReceivedRaw * feePct;
+        const r1ReceivedNet = r1ReceivedRaw - fee;
+        
+        setUsdtBalance(prev => prev - totalCost);
+        setStats(prev => ({
+          ...prev,
+          r1Balance: (prev.r1Balance || 0) + r1ReceivedNet
+        }));
+        
+        const logDesc = `[交易市场] 买入 ${r1ReceivedNet.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
+        addRecordLog("trade", r1ReceivedNet, logDesc);
+        
+        triggerNotification("买入交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格买入 ${r1ReceivedNet.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
+        return true;
+      } else {
+        // amount is the quantity of R1 the user sells
+        const latestStats = statsRef.current;
+        if ((latestStats.r1Balance || 0) < amount) {
+          triggerNotification("R1 不足", `卖出所需 ${amount.toFixed(4)} R1 超出您的 R1 权益余额。`, "warn");
+          return false;
+        }
+        
+        const totalR1Sold = amount;
+        const usdtReceivedRaw = totalR1Sold * price;
+        const fee = usdtReceivedRaw * feePct;
+        const usdtReceivedNet = usdtReceivedRaw - fee;
+        
+        setStats(prev => ({
+          ...prev,
+          r1Balance: Math.max(0, (prev.r1Balance || 0) - totalR1Sold)
+        }));
+        setUsdtBalance(prev => prev + usdtReceivedNet);
+        
+        const logDesc = `[交易市场] 卖出 ${totalR1Sold.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
+        addRecordLog("trade", totalR1Sold, logDesc);
+        
+        triggerNotification("卖出交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格卖出 ${totalR1Sold.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
+        return true;
       }
-      
-      const totalR1Sold = amount;
-      const usdtReceivedRaw = totalR1Sold * price;
-      const fee = usdtReceivedRaw * feePct;
-      const usdtReceivedNet = usdtReceivedRaw - fee;
-      
-      setStats(prev => ({
-        ...prev,
-        hashFragments: Math.max(0, prev.hashFragments - totalR1Sold)
-      }));
-      setUsdtBalance(prev => prev + usdtReceivedNet);
-      
-      const logDesc = `[交易市场] 卖出 ${totalR1Sold.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
-      addRecordLog("trade", totalR1Sold, logDesc);
-      
-      triggerNotification("卖出交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格卖出 ${totalR1Sold.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
-      return true;
     }
   };
 
@@ -645,16 +672,16 @@ export default function App() {
 
   const handleLaunchToken = (tokenData: UserIssuedToken): boolean => {
     const latestStats = statsRef.current;
-    if (latestStats.hashFragments < 100) {
+    if ((latestStats.r1Balance || 0) < 100) {
       triggerNotification("R1 押金不足", "可锁定质押押金不足 100 R1，无法发行影子 Token。", "warn");
       return false;
     }
 
     setStats((prev) => {
-      if (prev.hashFragments < 100) return prev;
+      if ((prev.r1Balance || 0) < 100) return prev;
       return {
         ...prev,
-        hashFragments: prev.hashFragments - 100
+        r1Balance: prev.r1Balance - 100
       };
     });
 
@@ -783,6 +810,7 @@ export default function App() {
                   stats={stats}
                   activeMiners={activeMiners}
                   records={records}
+                  usdtBalance={usdtBalance}
                   onSynthesize={handleSynthesize}
                   onBuyCoolant={handleBuyCoolant}
                   onApplyCoolant={handleApplyCoolant}
@@ -907,6 +935,7 @@ export default function App() {
 const INITIAL_STATS: UserStats = {
   hashFragments: 32.54,
   hashCrystals: 0,
+  r1Balance: 150.0, // Initial R1 Token balance
   level: UserLevel.ZERO,
   baseHashpower: 50.0, // 50P startup license
   teamHashpower: 0.0,

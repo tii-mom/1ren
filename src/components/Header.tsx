@@ -78,9 +78,9 @@ export const Header: React.FC<HeaderProps> = ({
           {/* R1 Token Balance */}
           <div className="bg-white/5 border border-white/10 rounded-full px-1.5 sm:px-4 py-0.5 sm:py-1 flex items-center gap-1 shadow-sm shrink-0">
             <div>
-              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">我的 R1 Token</span>
+              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">AI Token</span>
               <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-400 text-glow-gold flex items-baseline gap-0.5">
-                {stats.hashFragments.toFixed(2)} <span className="text-[8px] font-normal text-slate-500">R1</span>
+                {stats.hashFragments.toFixed(2)} <span className="text-[8px] font-normal text-slate-500">AI</span>
               </span>
             </div>
           </div>

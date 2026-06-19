@@ -53,7 +53,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
   const condLevel = useMemo(() => stats.level !== "S0 自有设备节点" && stats.level !== ("ZERO" as any), [stats.level]);
   const condOutput = useMemo(() => stats.accumulatedFragments >= 500.0, [stats.accumulatedFragments]);
   const condDevices = useMemo(() => activeMiners.filter(m => m.status !== "stopped").length >= 1, [activeMiners]);
-  const condStake = useMemo(() => stats.hashFragments >= 100.0, [stats.hashFragments]);
+  const condStake = useMemo(() => (stats.r1Balance || 0) >= 100.0, [stats.r1Balance]);
 
   const metCount = useMemo(() => {
     let count = 0;
@@ -198,11 +198,11 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
               <div className="flex items-center justify-between p-3 rounded-2xl bg-black/20 border border-white/[0.03]">
                 <span className="text-slate-300 flex items-center gap-2.5">
                   <span className={`w-2 h-2 rounded-full ${condOutput ? "bg-emerald-400" : "bg-red-400"}`} />
-                  2. 累计 R1 产出 &gt;= 500 R1
+                  2. 累计 AI Token 产出 &gt;= 500 AI Token
                 </span>
                 <span className={`font-bold flex items-center gap-1 ${condOutput ? "text-emerald-400" : "text-slate-500"}`}>
                   {condOutput ? <CheckCircle className="size-4" /> : "未达标"}
-                  {stats.accumulatedFragments.toFixed(1)} / 500 R1
+                  {stats.accumulatedFragments.toFixed(1)} / 500 AI
                 </span>
               </div>
 
@@ -226,7 +226,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                 </span>
                 <span className={`font-bold flex items-center gap-1 ${condStake ? "text-emerald-400" : "text-slate-500"}`}>
                   {condStake ? <CheckCircle className="size-4" /> : "未达标"}
-                  {stats.hashFragments.toFixed(1)} / 100 R1
+                  {(stats.r1Balance || 0).toFixed(1)} / 100 R1
                 </span>
               </div>
             </div>
@@ -275,7 +275,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                 <span className="font-mono text-cyan-400 font-black">02</span>
                 <div>
                   <span className="text-slate-300 font-semibold block">R1 余额不足？</span>
-                  <p className="text-[10px] text-slate-500 mt-1">每日微调代工或完成签到可以迅速产出 Token。如果急需，可以在【交易页】直接使用模拟金市价买入 R1 Token。</p>
+                  <p className="text-[10px] text-slate-500 mt-1">设备产出的是 AI Token。R1 作为平台权益押金，无法由设备直接产出，您可以在【交易页】直接使用模拟金市价买入 R1，或者参与平台裂变与运营活动获得。</p>
                 </div>
               </div>
             </div>
