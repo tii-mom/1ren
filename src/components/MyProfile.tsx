@@ -111,7 +111,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
   // Simulating 30 days of daily log records details in CSV structure
   const getSimulated30DaysText = () => {
-    let text = "日期,事件类型,Token产出,运行设备,记录签名\n";
+    let text = "日期,事件类型,AI Token产出,运行设备,记录签名\n";
     const nowTime = new Date();
     for (let i = 1; i <= 30; i++) {
       const d = new Date(nowTime.getTime() - i * 24 * 60 * 60 * 1000);
@@ -138,8 +138,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
     {
       id: "active_miner",
       title: "活跃设备节点",
-      desc: "已有设备在线并产出首批 Token。",
-      requirement: "系统检测到累计产出Token利润数 > 0",
+      desc: "已有设备在线并产出首批 AI Token。",
+      requirement: "系统检测到累计产出 AI Token 利润数 > 0",
       isUnlocked: stats.accumulatedFragments > 0,
       icon: "⚡",
       color: "from-amber-400 to-orange-500 text-amber-400",
@@ -149,7 +149,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
     {
       id: "crystal_master",
       title: "API 凭证生成者",
-      desc: "已将 Token 转换成至少 1 组 API/URL 服务凭证。",
+      desc: "已将 AI Token 转换成至少 1 组 API/URL 服务凭证。 ",
       requirement: "系统检测到累计服务凭证数 >= 1",
       isUnlocked: stats.totalSynthesized >= 1 || stats.hashCrystals >= 1,
       icon: "💎",
@@ -628,7 +628,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                   }`}
                 >
                   <Plus className="size-3.5" />
-                  50 Token/罐
+                  50 AI Token/罐
                 </button>
               </div>
 
@@ -650,7 +650,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                 </span>
                 <h3 className="text-sm font-bold text-white">免费激活 7 天手机共享算力体验</h3>
                 <p className="text-xs text-slate-400 mt-1 font-medium font-sans max-w-2xl leading-relaxed">
-                  不购买设备也可以体验。系统会为您的自有设备创建体验节点，用于产出少量 Token。
+                  不购买设备也可以体验。系统会为您的自有设备创建体验节点，用于产出少量 AI Token。
                 </p>
               </div>
               <button
@@ -676,7 +676,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                   节点成长成就徽章系统 (Node Milestones & Badges)
                 </h3>
                 <p className="text-xs text-slate-400 font-sans">
-                  根据设备在线、Token 产出、API/URL 凭证和团队等级解锁。点击徽章可查看说明。
+                  根据设备在线、AI Token 产出、API/URL 凭证和团队等级解锁。点击徽章可查看说明。
                 </p>
               </div>
             </div>
@@ -1066,7 +1066,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                 </h3>
               </div>
               <p className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
-                使用此控制台模拟 Token 增长、团队节点等级和设备降频，方便本地预览测试。
+                使用此控制台模拟 AI Token 增长、团队节点等级和设备降频，方便本地预览测试。
               </p>
 
               <div className="space-y-4">
@@ -1083,7 +1083,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                     }}
                     className="px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[#22d3ee] hover:bg-cyan-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
                   >
-                    <Plus className="size-3.5" /> 利润 +100 Token
+                    <Plus className="size-3.5" /> 利润 +100 AI
                   </button>
 
                   <button
@@ -1098,7 +1098,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                     }}
                     className="px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[#22d3ee] hover:bg-cyan-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
                   >
-                    <Plus className="size-3.5" /> 利润 +500 Token
+                    <Plus className="size-3.5" /> 利润 +500 AI
                   </button>
                 </div>
 
@@ -1192,7 +1192,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                   </h3>
                 </div>
                 <p className="text-[11px] text-slate-400 font-medium">
-                  统计设备购买成本、累计 Token 产出、平台回收估值和 API/URL 凭证数量。
+                  统计设备购买成本、累计 AI Token 产出、平台回收估值和 API/URL 凭证数量。
                 </p>
               </div>
               
@@ -1223,10 +1223,10 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               </div>
 
               <div className="bg-black/30 border border-white/5 rounded-xl p-4.5 space-y-1 relative group hover:border-emerald-500/10 transition-all">
-                <span className="text-[9.5px] uppercase text-slate-500 font-bold block">累计 Token 产出</span>
-                <div className="text-emerald-400 font-mono font-black text-lg">{stats.accumulatedFragments.toFixed(1)} Token</div>
+                <span className="text-[9.5px] uppercase text-slate-500 font-bold block">累计 AI Token 产出</span>
+                <div className="text-emerald-400 font-mono font-black text-lg">{stats.accumulatedFragments.toFixed(1)} AI Token</div>
                 <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-                  账户从自有设备、并网设备和团队节点累计获得的 Token。
+                  账户从自有设备、并网设备和团队节点累计获得的 AI Token。
                 </p>
               </div>
 
@@ -1274,7 +1274,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                   <TrendingUp className="text-cyan-400 size-5" />
                   <div>
                     <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
-                      30 日 Token 产出明细导出
+                      30 日 AI Token 产出明细导出
                     </h3>
                     <span className="text-[9px] text-cyan-400 font-mono tracking-widest block font-bold">BLOCKCHAIN HISTORICAL REPORT EXPORT</span>
                   </div>

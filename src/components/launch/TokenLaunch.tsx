@@ -154,10 +154,10 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
         
         <div className="flex items-center gap-2">
           <Coins className="text-emerald-400 size-5.5 icon-glow-emerald" />
-          <h1 className="text-base font-extrabold text-white">R1 企业 Token 自助发行中心</h1>
+          <h1 className="text-base font-extrabold text-white">R1 企业公司 Token 自助发行中心</h1>
         </div>
         <p className="text-xs text-slate-400 mt-2 max-w-2xl leading-relaxed">
-          「1人算力有限公司」提供基于 R1 公共算力池的影子发行平台。在这里，满足门槛条件的算力节点主可以为自己的项目发行模拟 Token，模拟筹集 USDT 支持资金。
+          「1人算力有限公司」提供基于 R1 公共算力池的影子发行平台。在这里，满足门槛条件的算力节点主可以为自己的项目发行模拟公司 Token，模拟筹集 USDT 支持资金。
         </p>
       </div>
 
@@ -177,7 +177,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              为防止低质量垃圾项目泛滥并确保持仓真实度，发行 Token 必须满足以下硬件 and 产出资质：
+              为防止低质量垃圾项目泛滥并确保持仓真实度，发行公司 Token 必须满足以下硬件 and 产出资质：
             </p>
 
             {/* Checklist */}
@@ -241,7 +241,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                   开发者快捷调试入口 (DEV MODE ONLY)
                 </span>
               </div>
-              <p className="text-[9px] text-slate-400">为了方便您快速测试创建 Token 合约表单及部署动画，您可点击下方按钮直接修改参数满足准入条件。</p>
+              <p className="text-[9px] text-slate-400">为了方便您快速测试创建公司 Token 合约表单及部署动画，您可点击下方按钮直接修改参数满足准入条件。</p>
               <button
                 type="button"
                 onClick={onSatisfyConditions}
@@ -307,7 +307,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Token Name */}
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-mono block uppercase">Token 名称 (e.g., 矩阵动力)</label>
+                <label className="text-[10px] text-slate-500 font-mono block uppercase">公司 Token 名称 (e.g., 矩阵动力)</label>
                 <input
                   type="text"
                   required
@@ -321,7 +321,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
 
               {/* Token Symbol */}
               <div className="space-y-1">
-                <label className="text-[10px] text-slate-500 font-mono block uppercase">Token 符号 (大写，最多6位)</label>
+                <label className="text-[10px] text-slate-500 font-mono block uppercase">公司 Token 符号 (大写，最多6位)</label>
                 <input
                   type="text"
                   required

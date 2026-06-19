@@ -19,6 +19,7 @@ interface DashboardProps {
   r1Price: number;
   r1PriceDir: "up" | "down" | "flat";
   r1PriceChange: number;
+  aiTokenBuybackPrice: number; // Simulated AI Token buyback price (NEW!)
   handleExchangeTrade: (type: "buy" | "sell", amount: number, price: number, assetType?: "r1" | "ai") => boolean;
   setCurrentTab: (tab: string) => void;
 }
@@ -45,6 +46,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   r1Price,
   r1PriceDir,
   r1PriceChange,
+  aiTokenBuybackPrice,
   handleExchangeTrade,
   setCurrentTab
 }) => {
@@ -128,8 +130,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Calculations
   const sellableValuation = useMemo(() => {
-    return displayAiToken * r1Price;
-  }, [displayAiToken, r1Price]);
+    return displayAiToken * aiTokenBuybackPrice;
+  }, [displayAiToken, aiTokenBuybackPrice]);
 
   const todayOutputEstimate = useMemo(() => {
     return (stats.baseHashpower * 12.96 + stats.teamHashpower * 4.32) * (stats.buffActiveUntil ? 2.0 : 1.0);
@@ -166,7 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (sellPct === 100) {
       setShowDoubleConfirm(true);
     } else {
-      const success = handleExchangeTrade("sell", sellAmount, r1Price, "ai");
+      const success = handleExchangeTrade("sell", sellAmount, aiTokenBuybackPrice, "ai");
       if (success) {
         setIsSellSheetOpen(false);
       }
@@ -174,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const executeAllSell = () => {
-    const success = handleExchangeTrade("sell", stats.hashFragments, r1Price, "ai");
+    const success = handleExchangeTrade("sell", stats.hashFragments, aiTokenBuybackPrice, "ai");
     if (success) {
       setShowDoubleConfirm(false);
       setIsSellSheetOpen(false);
@@ -238,7 +240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Sellable Valuation */}
           <div className="bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">可卖出估值 (USDT)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">AI Token 回收估值 (USDT)</span>
             <span className="text-base font-bold text-white block mt-2 text-glow-cyan">
               {sellableValuation.toFixed(4)} <span className="text-[9px] font-normal text-slate-500">U</span>
             </span>
@@ -398,7 +400,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-base font-bold text-amber-400 block mt-1.5 text-glow-gold animate-pulse">
                   {recoveryPool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-400">U</span>
                 </span>
-                <span className="text-[8.5px] text-slate-500 block mt-1">智能合约清算额度递减中</span>
+                <span className="text-[8.5px] text-slate-500 block mt-1">模拟回收池额度递减中</span>
               </div>
               <div className="bg-black/40 border border-white/5 p-3 rounded-2xl text-center">
                 <span className="text-[8px] text-slate-500 block font-mono font-bold uppercase tracking-wider">即将发行公司 Token 榜</span>
@@ -594,7 +596,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="flex justify-between text-slate-400">
                   <span>当前 AI Token 回收折算价:</span>
-                  <span className="text-cyan-400 font-bold">{r1Price.toFixed(6)} USDT</span>
+                  <span className="text-cyan-400 font-bold">{aiTokenBuybackPrice.toFixed(6)} USDT</span>
                 </div>
 
                 <div className="flex justify-between items-center text-slate-400 pt-1">
@@ -628,15 +630,20 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="bg-amber-500/[0.03] border border-amber-500/10 rounded-2xl p-4 space-y-2.5">
                 <div className="flex justify-between text-xs text-slate-400">
                   <span>交易手续费 (0.3%):</span>
-                  <span className="text-slate-500 font-mono">{(stats.hashFragments * sellPct / 100 * r1Price * 0.003).toFixed(5)} USDT</span>
+                  <span className="text-slate-500 font-mono">{(stats.hashFragments * sellPct / 100 * aiTokenBuybackPrice * 0.003).toFixed(5)} USDT</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold text-slate-300 border-t border-white/5 pt-2">
                   <span>预计收到 USDT:</span>
                   <span className="text-emerald-400 font-mono text-sm text-glow-green">
-                    {((stats.hashFragments * sellPct / 100 * r1Price) * 0.997).toFixed(4)} U
+                    {((stats.hashFragments * sellPct / 100 * aiTokenBuybackPrice) * 0.997).toFixed(4)} U
                   </span>
                 </div>
               </div>
+
+              {/* Tip info warning */}
+              <p className="text-[10px] text-slate-500 font-medium font-sans leading-normal pl-1">
+                提示：按平台当前 AI Token 模拟回收价计算，不等同于 R1/USDT 现价。
+              </p>
 
               {/* Execution button */}
               <button

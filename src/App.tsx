@@ -27,6 +27,7 @@ export default function App() {
   // R1 Market price and exchange states
   const [r1Price, setR1Price] = useState<number>(0.05);
   const dayOpenPrice = 0.0475;
+  const aiTokenBuybackPrice = 0.001;
   const r1PriceChange = useMemo(() => {
     return parseFloat((((r1Price - dayOpenPrice) / dayOpenPrice) * 100).toFixed(2));
   }, [r1Price]);
@@ -441,7 +442,7 @@ export default function App() {
 
   const handleSynthesize = () => {
     if (stats.hashFragments < 100) {
-      triggerNotification("Token 不足", "生成一组 API/URL 需要 100 Token。您可以连接手机、完成每日任务或购买高性能并网设备继续产出。", "warn");
+      triggerNotification("AI Token 不足", "生成一组 API/URL 需要 100 AI Token。您可以连接手机、完成每日任务或购买高性能并网设备继续产出。 ", "warn");
       return;
     }
 
@@ -452,17 +453,17 @@ export default function App() {
       totalSynthesized: prev.totalSynthesized + 1
     }));
 
-    addRecordLog("synthesize", 100, "消耗 100 Token 生成 1 组可用算力凭证。");
+    addRecordLog("synthesize", 100, "消耗 100 AI Token 生成 1 组可用算力凭证。");
     triggerNotification(
       "API/URL 凭证已生成",
-      "已消耗 100 Token，生成 1 组算力服务凭证。您可以用于自用、对外出售或提交平台回收。",
+      "已消耗 100 AI Token，生成 1 组算力服务凭证。您可以用于自用、对外出售或提交平台回收。 ",
       "success"
     );
   };
 
   const handleBuyCoolant = (cost: number) => {
     if (stats.hashFragments < cost) {
-      triggerNotification("Token 不足", "购买设备维护包需要 50 Token。", "warn");
+      triggerNotification("AI Token 不足", "购买设备维护包需要 50 AI Token。", "warn");
       return;
     }
 
@@ -472,10 +473,10 @@ export default function App() {
       coolantCount: prev.coolantCount + 1
     }));
 
-    addRecordLog("coolant", cost, "花费 50 Token 购买设备维护包。");
+    addRecordLog("coolant", cost, "花费 50 AI Token 购买设备维护包。");
     triggerNotification(
       "设备维护包已入库",
-      "已扣除 50 Token。可在后台为降频设备执行维护，恢复设备产出效率。",
+      "已扣除 50 AI Token。可在后台为降频设备执行维护，恢复设备产出效率。 ",
       "success"
     );
   };
@@ -579,7 +580,7 @@ export default function App() {
     addRecordLog("mining", template.cost, `本地部署并激活并网 ${template.name} 算力设备。`);
     triggerNotification(
       "设备部署并网成功",
-      `已扣除 ${template.cost} USDT 并本地部署激活【${template.name}】。设备会并网微调训练产生 Token，可用于 API/URL、出售或平台回收。`,
+      `已扣除 ${template.cost} USDT 并本地部署激活【${template.name}】。设备会并网微调训练产生 AI Token，可用于 API/URL、出售或平台回收。`,
       "success"
     );
     setCurrentTab("my"); // Auto jump to My Profile to check
@@ -587,7 +588,7 @@ export default function App() {
 
   const handleRedeemItem = (item: StoreItem) => {
     if (stats.hashFragments < item.costFragments) {
-      triggerNotification("Token 不足", `该项目需要 ${item.costFragments.toLocaleString()} Token，当前余额不足。`, "warn");
+      triggerNotification("AI Token 不足", `该项目需要 ${item.costFragments.toLocaleString()} AI Token，当前余额不足。`, "warn");
       return;
     }
 
@@ -600,7 +601,7 @@ export default function App() {
     addRecordLog("exchange", item.costFragments, `兑换或开通「${item.name}」。`);
     triggerNotification(
       "订单已受理",
-      `已消耗 ${item.costFragments.toLocaleString()} Token。实体商品会进入发货流程，算力服务会生成对应凭证。`,
+      `已消耗 ${item.costFragments.toLocaleString()} AI Token。实体商品会进入发货流程，算力服务会生成对应凭证。`,
       "success"
     );
   };
@@ -664,10 +665,11 @@ export default function App() {
       ...prev,
       level: UserLevel.S1,
       accumulatedFragments: 500.0,
-      hashFragments: 150.0
+      hashFragments: 500.0,
+      r1Balance: 150.0
     }));
 
-    triggerNotification("开发测试条件已满足", "已将等级设为 S1，累计产出设为 500 R1，余额设为 150 R1，并激活算力设备。", "success");
+    triggerNotification("开发测试条件已满足", "已将等级设为 S1，累计 AI Token 产出设为 500，AI Token 余额设为 500，R1 权益余额设为 150，并激活算力设备。", "success");
   };
 
   const handleLaunchToken = (tokenData: UserIssuedToken): boolean => {
@@ -770,6 +772,7 @@ export default function App() {
                   r1Price={r1Price}
                   r1PriceDir={r1PriceDir}
                   r1PriceChange={r1PriceChange}
+                  aiTokenBuybackPrice={aiTokenBuybackPrice}
                   handleExchangeTrade={handleExchangeTrade}
                   setCurrentTab={setCurrentTab}
                 />
