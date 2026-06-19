@@ -288,8 +288,8 @@ export default function App() {
           
           if (prev.hashFragments < 100 && nextFragments >= 100) {
             triggerNotification(
-              "Token 已满足打包条件",
-              "账户余额已满 100 Token。您可以生成 API Key、访问 URL，或提交平台回收申请。",
+              "AI Token 已满足打包条件",
+              "账户 AI Token 已满 100，可生成 API Key、访问 URL，或提交平台回收申请。",
               "crystal"
             );
           }
@@ -435,7 +435,7 @@ export default function App() {
     addRecordLog("buff", 0, "开启一小时算力加速，产出倍率提升。");
     triggerNotification(
       "算力加速已开启",
-      "接下来 60 分钟内，自有设备和团队节点的 Token 产出会按加速倍率结算。",
+      "接下来 60 分钟内，自有设备和团队节点的 AI Token 产出会按加速倍率结算。",
       "success"
     );
   };
@@ -538,7 +538,7 @@ export default function App() {
     addRecordLog("mining", 0, "激活免费本地显卡共享算力体验节点 (7天试用)");
     triggerNotification(
       "本地共享节点已激活",
-      "系统已为您开启 7 天体验节点。您可以用自有本地设备并网共享算力，产出少量 Token。",
+      "系统已为您开启 7 天体验节点。您可以用自有本地设备并网共享算力，产出少量 AI Token。",
       "success"
     );
   };
@@ -616,7 +616,7 @@ export default function App() {
     addRecordLog("mining", rewardShards, description);
     triggerNotification(
       "设备签到成功",
-      `今日在线检测完成，获得 +${rewardShards} Token。${addCoolant ? "额外获得 1 个设备维护包。" : ""}`,
+      `今日在线检测完成，获得 +${rewardShards} AI Token。${addCoolant ? "额外获得 1 个设备维护包。" : ""}`,
       "success"
     );
   };
