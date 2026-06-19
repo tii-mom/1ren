@@ -12,6 +12,7 @@ import { TokenLaunch } from "./components/launch/TokenLaunch";
 import { BottomNavigation } from "./components/BottomNavigation";
 import { Info, X, Zap, CheckCircle2, ShieldCheck, Heart, AlertTriangle, TrendingUp, Coins } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import { loadIssuedTokens, saveIssuedTokens, updateIssuedToken } from "./utils/issuedTokens";
 
 export default function App() {
   // Navigation
@@ -709,6 +710,55 @@ export default function App() {
     return true;
   };
 
+  const handleSupportCompanyToken = (tokenId: string, amount: number): boolean => {
+    if (usdtBalance < amount) {
+      triggerNotification("余额不足", `账户模拟 USDT 余额不足 ${amount} U，无法提供支持。`, "warn");
+      return false;
+    }
+    
+    const tokens = loadIssuedTokens();
+    const targetToken = tokens.find(t => t.id === tokenId);
+    if (!targetToken) {
+      triggerNotification("错误", "找不到指定的公司 Token。", "warn");
+      return false;
+    }
+
+    const remaining = targetToken.targetPool - targetToken.raisedUsdt;
+    if (amount > remaining) {
+      triggerNotification("超额支持", `支持金额不能超过支持池剩余额度 ${remaining.toFixed(2)} USDT。`, "warn");
+      return false;
+    }
+
+    setUsdtBalance((prev) => prev - amount);
+    
+    updateIssuedToken(tokenId, (t) => {
+      const nextRaised = t.raisedUsdt + amount;
+      const nextProgress = Math.min(100, (nextRaised / t.targetPool) * 100);
+      return {
+        ...t,
+        raisedUsdt: nextRaised,
+        progress: nextProgress
+      };
+    });
+
+    addRecordLog("exchange", amount, `[公司支持] 投入 ${amount} USDT 支持影子公司 Token [${targetToken.symbol}]`);
+    triggerNotification("支持成功", `已成功模拟注入 ${amount} USDT 参与影子项目 [${targetToken.symbol}] 的建设。`, "success");
+    return true;
+  };
+
+  const handleUpdateCompanyTokenStatus = (tokenId: string, newStatus: "launching" | "listed" | "closed"): boolean => {
+    const tokens = loadIssuedTokens();
+    const targetToken = tokens.find(t => t.id === tokenId);
+    if (!targetToken) return false;
+
+    updateIssuedToken(tokenId, (t) => ({ ...t, status: newStatus }));
+    addRecordLog("exchange", 0, `[影子挂牌] 影子公司 [${targetToken.symbol}] 正式挂牌上市`);
+    triggerNotification("挂牌成功", `影子公司 [${targetToken.symbol}] 正式在影子交易区挂牌上市！`, "success");
+    // Trigger stats state update to refresh Dashboard/exchange views
+    setStats(prev => ({ ...prev }));
+    return true;
+  };
+
   return (
     <div className="h-screen h-[100dvh] w-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 font-sans tracking-tight relative select-none">
       
@@ -795,6 +845,9 @@ export default function App() {
                   r1PriceDir={r1PriceDir}
                   r1PriceChange={r1PriceChange}
                   handleExchangeTrade={handleExchangeTrade}
+                  onSupportCompanyToken={handleSupportCompanyToken}
+                  onUpdateCompanyTokenStatus={handleUpdateCompanyTokenStatus}
+                  setCurrentTab={setCurrentTab}
                 />
               )}
 
