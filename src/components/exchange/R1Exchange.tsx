@@ -253,8 +253,8 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
             <span className="text-slate-200 block font-bold mt-0.5">1,289,321</span>
           </div>
           <div>
-            <span>费率佣金</span>
-            <span className="text-cyan-400 block font-bold mt-0.5">0.3% R1</span>
+            <span>交易手续费</span>
+            <span className="text-cyan-400 block font-bold mt-0.5">0.3%</span>
           </div>
         </div>
       </div>
@@ -432,7 +432,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
               <button
                 type="button"
                 onClick={() => setOrderType("market")}
-                className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider rounded-lg border min-h-[36px] ${
+                className={`flex-1 py-2 text-[10px] font-mono font-bold tracking-wider rounded-lg border min-h-[44px] ${
                   orderType === "market"
                     ? "bg-cyan-500/10 border-cyan-400/40 text-cyan-400"
                     : "bg-white/5 border-white/5 text-slate-500"
@@ -442,8 +442,8 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
               </button>
               <button
                 type="button"
-                onClick={() => setOrderType("limit")}
-                className="flex-1 py-2 text-[10px] font-mono font-bold tracking-wider rounded-lg border bg-white/5 border-white/5 text-slate-650 cursor-not-allowed opacity-50 relative group"
+                disabled
+                className="flex-1 py-2 text-[10px] font-mono font-bold tracking-wider rounded-lg border bg-white/5 border-white/5 text-slate-650 cursor-not-allowed opacity-50 relative group min-h-[44px]"
               >
                 限价委托 (即将开放)
               </button>
@@ -520,7 +520,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                   key={pct}
                   type="button"
                   onClick={() => handlePercentSelect(pct)}
-                  className="py-2 text-[10px] font-mono font-bold rounded-xl border border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200 active:scale-95 transition-all min-h-[38px] cursor-pointer"
+                  className="py-2 text-[10px] font-mono font-bold rounded-xl border border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200 active:scale-95 transition-all min-h-[44px] cursor-pointer"
                 >
                   {pct === 100 ? "全部" : `${pct}%`}
                 </button>

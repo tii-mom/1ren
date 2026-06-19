@@ -82,3 +82,20 @@ export interface StoreItem {
   description: string;
   stock: number;
 }
+
+export interface UserIssuedToken {
+  id: string;
+  name: string;
+  symbol: string;
+  totalSupply: number;
+  initialPrice: number;
+  targetPool: number;
+  description: string;
+  status: "launching" | "listed" | "closed";
+  raisedUsdt: number;
+  progress: number;
+  lockedR1: 100;
+  ownerLevel: string;
+  createdAt: string;
+}
+

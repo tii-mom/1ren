@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { UserStats, ActiveMiner } from "../../types";
+import { UserStats, ActiveMiner, UserIssuedToken } from "../../types";
 import { 
   Coins, Cpu, Award, Zap, AlertTriangle, ShieldCheck, 
   HelpCircle, Sparkles, CheckCircle, ArrowRight, Loader2
@@ -10,7 +10,7 @@ interface TokenLaunchProps {
   stats: UserStats;
   activeMiners: ActiveMiner[];
   onSatisfyConditions: () => void;
-  onLaunchToken: (token: any) => void;
+  onLaunchToken: (token: UserIssuedToken) => boolean;
   setCurrentTab: (tab: string) => void;
 }
 
@@ -35,7 +35,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
   const [deployLogs, setDeployLogs] = useState<string[]>([]);
 
   // List of mock tokens issued by this user (from localStorage)
-  const [issuedTokens, setIssuedTokens] = useState<any[]>([]);
+  const [issuedTokens, setIssuedTokens] = useState<UserIssuedToken[]>([]);
 
   // Read issued tokens from localStorage
   useEffect(() => {
@@ -79,14 +79,14 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
 
     setIsDeploying(true);
     setDeployStep(1);
-    setDeployLogs(["[INFO] 正在建立 R1 主网影子部署编译器通道..."]);
+    setDeployLogs(["[INFO] 正在建立 R1 影子部署通道..."]);
 
     setTimeout(() => {
       setDeployStep(2);
       setDeployLogs(prev => [
         ...prev,
         "[SUCCESS] 编译器就绪。验证押金质押 100 R1... OK",
-        "[INFO] 正在编译 ERC-20 智能合约字节码 (Solidity v0.8.20)..."
+        "[INFO] 正在编译 模拟合约 字节码 (使用影子编译器 v0.8.20)..."
       ]);
     }, 600);
 
@@ -94,24 +94,40 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
       setDeployStep(3);
       setDeployLogs(prev => [
         ...prev,
-        "[SUCCESS] 合约编译成功，生成 ABI 和 BIN 成功。",
-        `[INFO] 正在为主网影子链部署广播交易 [${tokenSymbol}] ...`,
-        "[INFO] 节点区块固化验证中 (Consensus: PoSA)..."
+        "[SUCCESS] 模拟合约生成成功。",
+        `[INFO] 正在进行影子部署 [${tokenSymbol}] ...`,
+        "[INFO] 模拟支持池结算通道验证中..."
       ]);
     }, 1300);
 
     setTimeout(() => {
-      const newToken = {
+      const newToken: UserIssuedToken = {
+        id: `token-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         name: tokenName,
         symbol: tokenSymbol.toUpperCase(),
         totalSupply: parseInt(totalSupply),
         initialPrice: parseFloat(initialPrice),
         targetPool: parseFloat(targetPool),
         description,
+        status: "launching",
+        raisedUsdt: 0,
+        progress: 0,
+        lockedR1: 100,
+        ownerLevel: stats.level,
         createdAt: new Date().toISOString()
       };
       
-      onLaunchToken(newToken);
+      const success = onLaunchToken(newToken);
+      
+      if (!success) {
+        setIsDeploying(false);
+        setDeployStep(0);
+        setDeployLogs(prev => [
+          ...prev,
+          "[ERROR] 影子部署失败：锁定 100 R1 押金校验未通过。"
+        ]);
+        return;
+      }
       
       // Update local view
       setIssuedTokens(prev => [...prev, newToken]);
@@ -141,7 +157,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
           <h1 className="text-base font-extrabold text-white">R1 企业 Token 自助发行中心</h1>
         </div>
         <p className="text-xs text-slate-400 mt-2 max-w-2xl leading-relaxed">
-          「1人算力有限公司」提供基于 R1 公共算力池的影子发行平台。在这里，满足门槛条件的算力节点主可以为自己的项目发行模拟 Token，募集 USDT 支持资金。
+          「1人算力有限公司」提供基于 R1 公共算力池的影子发行平台。在这里，满足门槛条件的算力节点主可以为自己的项目发行模拟 Token，模拟筹集 USDT 支持资金。
         </p>
       </div>
 
@@ -323,6 +339,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                 <label className="text-[10px] text-slate-500 font-mono block uppercase">发行总量</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   required
                   min="1000"
                   disabled={isDeploying}
@@ -338,6 +355,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                 <label className="text-[10px] text-slate-500 font-mono block uppercase">初始发行价 (USDT)</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   required
                   step="0.0001"
                   min="0.0001"
@@ -351,9 +369,10 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
 
               {/* Target pool */}
               <div className="space-y-1 sm:col-span-2">
-                <label className="text-[10px] text-slate-500 font-mono block uppercase">支持池募集目标 (USDT)</label>
+                <label className="text-[10px] text-slate-500 font-mono block uppercase">模拟支持池目标 (USDT)</label>
                 <input
                   type="number"
+                  inputMode="decimal"
                   required
                   min="10"
                   disabled={isDeploying}
@@ -380,7 +399,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
 
             {/* Deploying state log console */}
             <AnimatePresence>
-              {isDeploying && (
+              {(isDeploying || deployLogs.length > 0) && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: "auto", opacity: 1 }}
@@ -388,8 +407,8 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                   className="bg-black/80 border border-cyan-500/20 rounded-2xl p-4 font-mono text-[10px] text-cyan-400 space-y-1"
                 >
                   <div className="flex items-center gap-2 mb-2 font-bold uppercase text-[10.5px]">
-                    <Loader2 className="size-3.5 animate-spin" />
-                    影子主网智能合约部署控制台
+                    {isDeploying && <Loader2 className="size-3.5 animate-spin" />}
+                    影子部署控制台
                   </div>
                   {deployLogs.map((log, idx) => (
                     <div key={idx} className="leading-relaxed">{log}</div>
@@ -444,7 +463,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                     <span className="text-cyan-400 font-bold block mt-0.5">{token.initialPrice.toFixed(4)} U</span>
                   </div>
                   <div>
-                    <span>募集目标</span>
+                    <span>支持池目标</span>
                     <span className="text-white font-bold block mt-0.5">{token.targetPool.toLocaleString()} U</span>
                   </div>
                 </div>
@@ -458,9 +477,9 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
       <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex items-start gap-3">
         <AlertTriangle className="size-5 text-red-500 shrink-0 mt-0.5 animate-pulse" />
         <div className="space-y-1">
-          <h4 className="text-xs font-extrabold text-red-400 uppercase tracking-wider">影子网络募资及部署风险声明</h4>
+          <h4 className="text-xs font-extrabold text-red-400 uppercase tracking-wider">影子网络部署与模拟支持池风险声明</h4>
           <p className="text-[10px] text-slate-400 leading-relaxed font-sans font-medium">
-            当前发行中心为 R1 企业代售发行的影子链测试环境。发行的智能合约编译、锁定质押及募资支持池仅作为本地数据模拟演示，并不代表真实募资融券、证券发行、或者任何外部中心化交易所的价格报价。测试资金不具真实商业用途，请注意规避模拟欺诈风险。
+            当前发行中心为 R1 影子部署测试环境。发行的模拟合约编译、锁定质押及模拟支持池仅作为本地数据模拟演示，并不代表真实募资融券、证券发行、或者任何外部中心化交易所的价格报价。测试资金不具真实商业用途，请注意规避模拟欺诈风险。
           </p>
         </div>
       </div>

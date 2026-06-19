@@ -47,16 +47,16 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="sticky top-0 z-50 bg-[#07090e]/90 border-b border-white/10 backdrop-blur-md">
       
       {/* Upper row: Brand Logo & User Wallets */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-[calc(12px+env(safe-area-inset-top))] pb-3 sm:py-4 flex justify-between items-center gap-1.5">
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 pt-[calc(12px+env(safe-area-inset-top))] pb-3 sm:py-4 flex justify-between items-center gap-1 sm:gap-1.5">
         
         {/* Brand visual logo */}
-        <div className="flex items-center gap-1.5 sm:gap-3 group cursor-pointer" onClick={() => setCurrentTab("home")}>
+        <div className="flex items-center gap-1 sm:gap-3 group cursor-pointer" onClick={() => setCurrentTab("home")}>
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(34,211,238,0.25)] group-hover:scale-105 transition-transform duration-300">
             <Cpu stroke="url(#gradient-cyan-blue)" className="size-4.5 sm:size-6 icon-glow-cyan" />
           </div>
           <div className="leading-none">
             <h1 className="text-xs sm:text-xl font-bold tracking-tighter text-white uppercase flex items-center gap-0.5">
-              1人算力有限公司 <span className="text-[7.5px] sm:text-[10px] text-cyan-400 font-mono tracking-widest">R1 TOKEN</span>
+              1人算力有限公司 <span className="text-[7.5px] sm:text-[10px] text-cyan-400 font-mono tracking-widest hidden xs:inline sm:inline">R1 TOKEN</span>
             </h1>
             <span className="text-[7.5px] sm:text-[10px] text-cyan-400 tracking-widest font-mono uppercase mt-0.5 block hidden sm:block">GROWTH POWER TERMINAL</span>
           </div>
@@ -66,7 +66,7 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center gap-1 sm:gap-3">
           
           {/* R1/USDT Price */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
+          <div className="bg-white/5 border border-white/10 rounded-full px-1.5 sm:px-4 py-0.5 sm:py-1 hidden sm:flex items-center gap-1 shadow-sm shrink-0">
             <div>
               <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">R1/USDT 估价</span>
               <span className="text-[10px] sm:text-xs font-mono font-bold text-cyan-400 flex items-baseline gap-0.5">
@@ -76,7 +76,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* R1 Token Balance */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
+          <div className="bg-white/5 border border-white/10 rounded-full px-1.5 sm:px-4 py-0.5 sm:py-1 flex items-center gap-1 shadow-sm shrink-0">
             <div>
               <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">我的 R1 Token</span>
               <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-400 text-glow-gold flex items-baseline gap-0.5">
@@ -86,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* USDT Test Wallet */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
+          <div className="bg-white/5 border border-white/10 rounded-full px-1.5 sm:px-4 py-0.5 sm:py-1 flex items-center gap-1 shadow-sm shrink-0">
             <div>
               <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">USDT 模拟金</span>
               <span className="text-[10px] sm:text-xs font-mono font-bold text-emerald-400 flex items-baseline gap-0.5">
@@ -105,7 +105,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Miner Level badge */}
-          <div className={`flex items-center gap-0.5 bg-white/5 border px-2 sm:px-4 py-1 rounded-full text-[9px] sm:text-xs font-bold leading-none capitalize shrink-0 ${getBadgeColor(stats.level)}`}>
+          <div className={`flex items-center gap-0.5 bg-white/5 border px-1.5 sm:px-4 py-0.5 sm:py-1 rounded-full text-[9px] sm:text-xs font-bold leading-none capitalize shrink-0 ${getBadgeColor(stats.level)}`}>
             <span className="sm:hidden">{getShortLevelName(stats.level)}</span>
             <span className="hidden sm:inline">{stats.level}</span>
           </div>
