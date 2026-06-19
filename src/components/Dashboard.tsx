@@ -7,6 +7,7 @@ import {
 import { DashboardChart } from "./DashboardChart";
 import { LoginStreak } from "./LoginStreak";
 import { motion, AnimatePresence } from "motion/react";
+import { loadIssuedTokens } from "../utils/issuedTokens";
 
 interface DashboardProps {
   stats: UserStats;
@@ -238,6 +239,21 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const completedStepsCount = useMemo(() => {
     return steps.filter(s => s.done).length;
   }, [steps]);
+
+  const dashboardUpcomingTokens = useMemo(() => {
+    const tokens = loadIssuedTokens();
+    const launchingOrListed = tokens.filter(t => t.status === "launching" || t.status === "listed");
+    if (launchingOrListed.length >= 1) {
+      return launchingOrListed.slice(0, 2).map(t => ({
+        name: `${t.name} (${t.symbol})`,
+        info: t.status === "listed" ? "已挂牌" : `支持 ${Math.round(t.progress || 0)}%`
+      }));
+    }
+    return [
+      { name: "魔方算力 (CUBE)", info: "支持 92%" },
+      { name: "矩阵AI (AI-NEO)", info: "支持 45%" }
+    ];
+  }, [stats]);
 
   // Quick sell execution
   const handleQuickSellSubmit = () => {
@@ -549,17 +565,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </span>
                 <span className="text-[8.5px] text-slate-500 block mt-1">模拟回收池额度递减中</span>
               </div>
-              <div className="bg-black/40 border border-white/5 p-3 rounded-2xl text-center">
+              <div className="bg-black/40 border border-white/5 p-3 rounded-2xl text-center flex flex-col justify-between">
                 <span className="text-[8px] text-slate-500 block font-mono font-bold uppercase tracking-wider">即将发行公司 Token 榜</span>
                 <div className="mt-2 text-[10px] font-mono text-slate-300 space-y-1">
-                  <div className="flex justify-between font-bold">
-                    <span>魔方算力 (CUBE)</span>
-                    <span className="text-cyan-400 flex items-center gap-0.5"><Clock className="size-3 text-cyan-400" /> 02:15</span>
-                  </div>
-                  <div className="flex justify-between font-bold">
-                    <span>矩阵AI (AI-NEO)</span>
-                    <span className="text-cyan-400 flex items-center gap-0.5"><Clock className="size-3 text-cyan-400" /> 06:40</span>
-                  </div>
+                  {dashboardUpcomingTokens.map((token, idx) => (
+                    <div key={idx} className="flex justify-between font-bold gap-2">
+                      <span className="truncate max-w-[100px] text-left">{token.name}</span>
+                      <span className="text-cyan-400 flex items-center gap-0.5 shrink-0">
+                        <Clock className="size-3 text-cyan-400" /> {token.info}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
