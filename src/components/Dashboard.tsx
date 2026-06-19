@@ -176,8 +176,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [stats]);
 
   const steps = useMemo(() => {
-    const step1Done = activeMiners.filter(m => m.status !== "stopped").length >= 1;
-    const step2Done = records.some(r => r.type === "mining" && r.amount > 0) || stats.accumulatedFragments > 50;
+    const runningMinerCount = activeMiners.filter(m => m.status !== "stopped").length;
+    const step1Done = runningMinerCount >= 1;
+    const minerHasProduced = activeMiners.some(m => (m.accumulatedRewards || 0) > 0);
+
+    const step2Done = step1Done && (minerHasProduced || stats.accumulatedFragments > 50);
     const step3Done = stats.totalSynthesized > 0 || records.some(r => 
       r.type === "synthesize" || 
       (r.type === "trade" && r.description.includes("AI Token")) || 
