@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutDashboard, Network, Cpu, KeyRound, User } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Cpu, Coins, User } from "lucide-react";
 
 interface BottomNavigationProps {
   currentTab: string;
@@ -56,11 +56,11 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
   };
 
   const navItems = [
-    { id: "home", label: "总览", icon: LayoutDashboard },
-    { id: "tower", label: "团队", icon: Network },
+    { id: "home", label: "首页", icon: LayoutDashboard },
+    { id: "exchange", label: "交易", icon: TrendingUp },
     { id: "store", label: "机房", icon: Cpu },
-    { id: "items", label: "服务", icon: KeyRound },
-    { id: "my", label: "后台", icon: User },
+    { id: "launch", label: "发行", icon: Coins },
+    { id: "my", label: "我的", icon: User },
   ];
 
   const getTabStroke = (tabId: string, active: boolean) => {
@@ -70,9 +70,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       case "store":
       case "my":
         return "url(#gradient-cyan-blue)";
-      case "tower":
+      case "exchange":
         return "url(#gradient-purple-pink)";
-      case "items":
+      case "launch":
         return "url(#gradient-emerald-teal)";
       default:
         return "url(#gradient-cyan-blue)";
@@ -86,9 +86,9 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
       case "store":
       case "my":
         return "icon-glow-cyan";
-      case "tower":
+      case "exchange":
         return "icon-glow-purple";
-      case "items":
+      case "launch":
         return "icon-glow-emerald";
       default:
         return "icon-glow-cyan";
@@ -123,8 +123,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               >
                 <IconComponent 
                   stroke={getTabStroke(item.id, isActive)}
-                  className={`size-5 ${getTabGlowClass(item.id, isActive)} ${item.id === "tower" && isActive ? "animate-spin" : ""}`} 
-                  style={item.id === "tower" && isActive ? { animationDuration: "12s" } : undefined}
+                  className={`size-5 ${getTabGlowClass(item.id, isActive)}`} 
                 />
               </div>
 

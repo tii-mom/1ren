@@ -33,7 +33,7 @@ export interface MiningRecord {
   id: string;
   timestamp: string;
   amount: number;
-  type: "mining" | "resonance" | "synthesize" | "coolant" | "exchange" | "buff";
+  type: "mining" | "resonance" | "synthesize" | "coolant" | "exchange" | "buff" | "trade";
   description: string;
 }
 

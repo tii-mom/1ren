@@ -1,6 +1,6 @@
 import React from "react";
 import { UserStats, UserLevel } from "../types";
-import { Cpu, Network, PlusCircle, LayoutDashboard, KeyRound, PackageOpen, User } from "lucide-react";
+import { Cpu, PlusCircle, LayoutDashboard, Coins, PackageOpen, User, TrendingUp } from "lucide-react";
 
 interface HeaderProps {
   stats: UserStats;
@@ -8,6 +8,7 @@ interface HeaderProps {
   onAddTestUsdt: () => void;
   currentTab: string;
   setCurrentTab: (tab: string) => void;
+  r1Price?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -15,7 +16,8 @@ export const Header: React.FC<HeaderProps> = ({
   usdtBalance,
   onAddTestUsdt,
   currentTab,
-  setCurrentTab
+  setCurrentTab,
+  r1Price = 0.05
 }) => {
   const getBadgeColor = (level: UserLevel) => {
     switch (level) {
@@ -54,22 +56,41 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div className="leading-none">
             <h1 className="text-xs sm:text-xl font-bold tracking-tighter text-white uppercase flex items-center gap-0.5">
-              1人算力有限公司 <span className="text-[7.5px] sm:text-[10px] text-cyan-400 font-mono tracking-widest">TOKEN</span>
+              1人算力有限公司 <span className="text-[7.5px] sm:text-[10px] text-cyan-400 font-mono tracking-widest">R1 TOKEN</span>
             </h1>
-            <span className="text-[7.5px] sm:text-[10px] text-cyan-400 tracking-widest font-mono uppercase mt-0.5 block hidden sm:block">DEVICE POWER CO., LTD</span>
+            <span className="text-[7.5px] sm:text-[10px] text-cyan-400 tracking-widest font-mono uppercase mt-0.5 block hidden sm:block">GROWTH POWER TERMINAL</span>
           </div>
         </div>
 
         {/* Status widgets */}
         <div className="flex items-center gap-1 sm:gap-3">
           
+          {/* R1/USDT Price */}
+          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
+            <div>
+              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">R1/USDT 估价</span>
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-cyan-400 flex items-baseline gap-0.5">
+                {r1Price.toFixed(4)} <span className="text-[8px] font-normal text-slate-500">U</span>
+              </span>
+            </div>
+          </div>
+
+          {/* R1 Token Balance */}
+          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
+            <div>
+              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">我的 R1 Token</span>
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-400 text-glow-gold flex items-baseline gap-0.5">
+                {stats.hashFragments.toFixed(2)} <span className="text-[8px] font-normal text-slate-500">R1</span>
+              </span>
+            </div>
+          </div>
+
           {/* USDT Test Wallet */}
           <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
             <div>
               <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">USDT 模拟金</span>
-              <span className="text-[10px] sm:text-xs font-mono font-bold text-emerald-400 flex items-center gap-0.5">
-                <span className="text-emerald-500 font-sans text-[8px] sm:text-[10px] sm:hidden">U:</span>
-                {usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })} <span className="text-[8px] font-normal text-slate-400 hidden sm:inline">U</span>
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-emerald-400 flex items-baseline gap-0.5">
+                {usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })} <span className="text-[8px] font-normal text-slate-500">U</span>
               </span>
             </div>
             
@@ -77,21 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
               id="btn-mint-usdt"
               onClick={onAddTestUsdt}
               className="p-0.5 rounded-full bg-white/10 text-slate-300 hover:text-emerald-400 hover:bg-white/20 transition-all cursor-pointer touch-manipulation min-w-[20px] min-h-[20px] flex items-center justify-center"
-              title="获取 1,000 USDT $测试体验金"
+              title="获取 1,000 USDT 测试体验金"
             >
               <PlusCircle stroke="url(#gradient-emerald-teal)" className="size-3 icon-glow-emerald" />
             </button>
-          </div>
-
-          {/* Crystals widget */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
-            <div>
-              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block block font-mono uppercase tracking-wider">API/URL 凭证</span>
-              <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-400 text-glow-gold flex items-center gap-0.5 leading-none">
-                <PackageOpen stroke="url(#gradient-amber-orange)" className="size-3 icon-glow-amber" />
-                {stats.hashCrystals || 0} <span className="text-[8px] font-normal text-slate-400 hidden sm:inline">组</span>
-              </span>
-            </div>
           </div>
 
           {/* Miner Level badge */}
@@ -107,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Lower row: Nav Menu */}
       <div className="border-t border-white/10 bg-black/20 md:block hidden">
         <nav className="max-w-7xl mx-auto px-6 flex overflow-x-auto no-scrollbar gap-2 pt-2 pb-2">
-          {/* 1. 公司总览 */}
+          {/* 1. 首页 */}
           <button
             onClick={() => setCurrentTab("home")}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all duration-200 shrink-0 cursor-pointer border ${
@@ -117,23 +127,23 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <LayoutDashboard stroke={currentTab === "home" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "home" ? "icon-glow-cyan" : ""}`} />
-            总览
+            首页
           </button>
 
-          {/* 2. 团队节点 */}
+          {/* 2. 交易 */}
           <button
-            onClick={() => setCurrentTab("tower")}
+            onClick={() => setCurrentTab("exchange")}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all duration-200 shrink-0 cursor-pointer border ${
-              currentTab === "tower"
+              currentTab === "exchange"
                 ? "text-cyan-400 bg-white/10 border-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]"
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <Network stroke={currentTab === "tower" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "tower" ? "icon-glow-cyan" : ""}`} />
-            团队节点
+            <TrendingUp stroke={currentTab === "exchange" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "exchange" ? "icon-glow-cyan" : ""}`} />
+            交易
           </button>
 
-          {/* 3. AI引擎机房 */}
+          {/* 3. 设备机房 */}
           <button
             onClick={() => setCurrentTab("store")}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all duration-200 shrink-0 cursor-pointer border ${
@@ -146,20 +156,20 @@ export const Header: React.FC<HeaderProps> = ({
             设备机房
           </button>
 
-          {/* 4. 经营物资库 */}
+          {/* 4. 发行中心 */}
           <button
-            onClick={() => setCurrentTab("items")}
+            onClick={() => setCurrentTab("launch")}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all duration-200 shrink-0 cursor-pointer border ${
-              currentTab === "items"
+              currentTab === "launch"
                 ? "text-cyan-400 bg-white/10 border-cyan-500/40 shadow-[0_0_10px_rgba(34,211,238,0.25)]"
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <KeyRound stroke={currentTab === "items" ? "url(#gradient-emerald-teal)" : "currentColor"} className={`size-4 ${currentTab === "items" ? "icon-glow-emerald" : ""}`} />
-            Token 服务
+            <Coins stroke={currentTab === "launch" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "launch" ? "icon-glow-cyan" : ""}`} />
+            发行中心
           </button>
 
-          {/* 5. 创始人后台 */}
+          {/* 5. 我的 */}
           <button
             onClick={() => setCurrentTab("my")}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all duration-200 shrink-0 cursor-pointer border ${

@@ -6,11 +6,11 @@ import {
 import { Header } from "./components/Header";
 import { Dashboard } from "./components/Dashboard";
 import { MinerStore } from "./components/MinerStore";
-import { ResonanceTower } from "./components/ResonanceTower";
-import { ItemStore } from "./components/ItemStore";
+import { R1Exchange } from "./components/exchange/R1Exchange";
 import { MyProfile } from "./components/MyProfile";
+import { TokenLaunch } from "./components/launch/TokenLaunch";
 import { BottomNavigation } from "./components/BottomNavigation";
-import { Info, X, Zap, CheckCircle2, ShieldCheck, Heart, AlertTriangle } from "lucide-react";
+import { Info, X, Zap, CheckCircle2, ShieldCheck, Heart, AlertTriangle, TrendingUp, Coins } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 export default function App() {
@@ -23,6 +23,84 @@ export default function App() {
   const [tasks, setTasks] = useState<TaskState>(INITIAL_TASKS);
   const [records, setRecords] = useState<MiningRecord[]>([]);
   const [usdtBalance, setUsdtBalance] = useState<number>(500.0); // Start with 500U free mock testbed fund
+
+  // R1 Market price and exchange states
+  const [r1Price, setR1Price] = useState<number>(0.05);
+  const [r1PriceChange, setR1PriceChange] = useState<number>(5.42); // 24h change pct
+  const [r1PriceDir, setR1PriceDir] = useState<"up" | "down" | "flat">("flat");
+
+  // Ticking price simulator
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setR1Price((prev) => {
+        const isUp = Math.random() > 0.46; // slightly upward biased random walk
+        const delta = (Math.random() * 0.0008) * (isUp ? 1 : -1);
+        const next = Math.max(0.0400, Math.min(0.0800, prev + delta));
+        
+        // update dir
+        if (next > prev) setR1PriceDir("up");
+        else if (next < prev) setR1PriceDir("down");
+        else setR1PriceDir("flat");
+        
+        return parseFloat(next.toFixed(6));
+      });
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Shared unified transaction handler for R1/USDT spot exchange
+  const handleExchangeTrade = (type: "buy" | "sell", amount: number, price: number): boolean => {
+    const feePct = 0.003; // 0.3% commission fee
+    
+    if (type === "buy") {
+      // amount is the quantity of USDT the user pays
+      if (usdtBalance < amount) {
+        triggerNotification("余额不足", `买入所需 ${amount.toFixed(2)} USDT 超出您的模拟金余额。`, "warn");
+        return false;
+      }
+      
+      const totalCost = amount;
+      const r1ReceivedRaw = totalCost / price;
+      const fee = r1ReceivedRaw * feePct;
+      const r1ReceivedNet = r1ReceivedRaw - fee;
+      
+      setUsdtBalance(prev => prev - totalCost);
+      setStats(prev => ({
+        ...prev,
+        hashFragments: prev.hashFragments + r1ReceivedNet,
+        accumulatedFragments: prev.accumulatedFragments + r1ReceivedNet
+      }));
+      
+      const logDesc = `[交易市场] 买入 ${r1ReceivedNet.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
+      addRecordLog("trade", r1ReceivedNet, logDesc);
+      
+      triggerNotification("买入交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格买入 ${r1ReceivedNet.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
+      return true;
+    } else {
+      // amount is the quantity of R1 the user sells
+      if (stats.hashFragments < amount) {
+        triggerNotification("Token 不足", `卖出所需 ${amount.toFixed(4)} R1 超出您的 R1 Token 余额。`, "warn");
+        return false;
+      }
+      
+      const totalR1Sold = amount;
+      const usdtReceivedRaw = totalR1Sold * price;
+      const fee = usdtReceivedRaw * feePct;
+      const usdtReceivedNet = usdtReceivedRaw - fee;
+      
+      setStats(prev => ({
+        ...prev,
+        hashFragments: Math.max(0, prev.hashFragments - totalR1Sold)
+      }));
+      setUsdtBalance(prev => prev + usdtReceivedNet);
+      
+      const logDesc = `[交易市场] 卖出 ${totalR1Sold.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
+      addRecordLog("trade", totalR1Sold, logDesc);
+      
+      triggerNotification("卖出交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格卖出 ${totalR1Sold.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
+      return true;
+    }
+  };
 
   // Sync refs to avoid stale closures in stable single-instance timers
   const activeMinersRef = useRef<ActiveMiner[]>(activeMiners);
@@ -508,6 +586,83 @@ export default function App() {
     );
   };
 
+  const handleSatisfyLaunchConditions = () => {
+    const activeNonDemoSumCost = activeMiners
+      .filter(m => !m.isDemo && m.status !== "stopped")
+      .reduce((sum, m) => sum + m.cost, 0);
+
+    let updatedMiners = [...activeMiners];
+    if (updatedMiners.length === 0) {
+      const nowIso = new Date().toISOString();
+      const testMiner: ActiveMiner = {
+        id: `miner-test-${Date.now()}`,
+        name: "GPU 并网算力节点 S1",
+        cost: 100,
+        dailyYield: 0.015,
+        contractDays: 30,
+        purchasedAt: nowIso,
+        expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+        status: "running",
+        accumulatedRewards: 0,
+        efficiency: 1.0
+      };
+      updatedMiners = [testMiner];
+      setActiveMiners(updatedMiners);
+    } else if (activeNonDemoSumCost < 100) {
+      const nowIso = new Date().toISOString();
+      const testMiner: ActiveMiner = {
+        id: `miner-test-${Date.now()}`,
+        name: "GPU 并网算力节点 S1",
+        cost: 100,
+        dailyYield: 0.015,
+        contractDays: 30,
+        purchasedAt: nowIso,
+        expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+        status: "running",
+        accumulatedRewards: 0,
+        efficiency: 1.0
+      };
+      updatedMiners = [testMiner, ...updatedMiners];
+      setActiveMiners(updatedMiners);
+    }
+
+    setStats((prev) => ({
+      ...prev,
+      level: UserLevel.S1,
+      accumulatedFragments: 500.0,
+      hashFragments: 150.0
+    }));
+
+    triggerNotification("开发测试条件已满足", "已将等级设为 S1，累计产出设为 500 R1，余额设为 150 R1，并激活算力设备。", "success");
+  };
+
+  const handleLaunchToken = (tokenData: any) => {
+    setStats((prev) => ({
+      ...prev,
+      hashFragments: Math.max(0, prev.hashFragments - 100)
+    }));
+
+    addRecordLog("exchange", 100, `[发行中心] 质押锁仓 100 R1 成功发行影子 Token [${tokenData.symbol}]`);
+
+    const saved = localStorage.getItem("r1_user_issued_tokens");
+    let currentTokens = [];
+    if (saved) {
+      try {
+        currentTokens = JSON.parse(saved);
+      } catch (e) {
+        console.warn("Error parsing existing issued tokens:", e);
+      }
+    }
+    const updatedTokens = [...currentTokens, tokenData];
+    localStorage.setItem("r1_user_issued_tokens", JSON.stringify(updatedTokens));
+
+    triggerNotification(
+      "企业 Token 发行成功",
+      `已质押锁仓 100 R1 押金。影子 Token [${tokenData.symbol}] 智能合约部署成功，进入模拟支持池。`,
+      "success"
+    );
+  };
+
   return (
     <div className="h-screen h-[100dvh] w-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 font-sans tracking-tight relative select-none">
       
@@ -544,6 +699,7 @@ export default function App() {
         onAddTestUsdt={handleAddTestUsdt}
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
+        r1Price={r1Price}
       />
 
       {/* Master Main Container Body and Page switches */}
@@ -567,6 +723,11 @@ export default function App() {
                   onTriggerBuff={handleTriggerBuff}
                   onSynthesize={handleSynthesize}
                   onCheckInCompleted={handleCheckInCompleted}
+                  r1Price={r1Price}
+                  r1PriceDir={r1PriceDir}
+                  r1PriceChange={r1PriceChange}
+                  handleExchangeTrade={handleExchangeTrade}
+                  setCurrentTab={setCurrentTab}
                 />
               )}
 
@@ -578,17 +739,27 @@ export default function App() {
                 />
               )}
 
-              {currentTab === "tower" && (
-                <ResonanceTower stats={stats} />
-              )}
-
-              {currentTab === "items" && (
-                <ItemStore
+              {currentTab === "exchange" && (
+                <R1Exchange
                   stats={stats}
-                  onRedeemItem={handleRedeemItem}
-                  onBuyCoolant={handleBuyCoolant}
+                  usdtBalance={usdtBalance}
+                  r1Price={r1Price}
+                  r1PriceDir={r1PriceDir}
+                  r1PriceChange={r1PriceChange}
+                  handleExchangeTrade={handleExchangeTrade}
                 />
               )}
+
+              {currentTab === "launch" && (
+                <TokenLaunch
+                  stats={stats}
+                  activeMiners={activeMiners}
+                  onSatisfyConditions={handleSatisfyLaunchConditions}
+                  onLaunchToken={handleLaunchToken}
+                  setCurrentTab={setCurrentTab}
+                />
+              )}
+
 
               {currentTab === "my" && (
                 <MyProfile
@@ -600,6 +771,7 @@ export default function App() {
                   onApplyCoolant={handleApplyCoolant}
                   onClaimDemoMiner={handleClaimDemoMiner}
                   onUpdateSimulatedStats={(updater) => setStats(updater)}
+                  onRedeemItem={handleRedeemItem}
                   onForceAgeMiner={() => {
                     setActiveMiners((prev) => {
                       if (prev.length === 0) return prev;
