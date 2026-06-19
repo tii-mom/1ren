@@ -741,6 +741,8 @@ export default function App() {
       };
     });
 
+    setStats((prev) => ({ ...prev }));
+
     addRecordLog("exchange", amount, `[公司支持] 投入 ${amount} USDT 支持影子公司 Token [${targetToken.symbol}]`);
     triggerNotification("支持成功", `已成功模拟注入 ${amount} USDT 参与影子项目 [${targetToken.symbol}] 的建设。`, "success");
     return true;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { UserStats, MiningRecord } from "../../types";
+import { UserStats, MiningRecord, UserIssuedToken } from "../../types";
 import { 
   TrendingUp, Coins, ArrowUpRight, ArrowDownRight, Clock, Cpu, 
   AlertTriangle, Play, Sparkles, User, HelpCircle, ChevronRight, Info, ShieldCheck
@@ -31,8 +31,8 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
   setCurrentTab
 }) => {
   const [marketTab, setMarketTab] = useState<"r1" | "company">("r1");
-  const [issuedTokens, setIssuedTokens] = useState<any[]>([]);
-  const [selectedToken, setSelectedToken] = useState<any | null>(null);
+  const [issuedTokens, setIssuedTokens] = useState<UserIssuedToken[]>([]);
+  const [selectedToken, setSelectedToken] = useState<UserIssuedToken | null>(null);
   const [supportAmount, setSupportAmount] = useState<string>("100");
   const [supportingTokenId, setSupportingTokenId] = useState<string | null>(null);
 
@@ -868,7 +868,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                   <span className="text-white font-bold">{usdtBalance.toFixed(2)} U</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>剩余募集额度:</span>
+                  <span>剩余支持额度:</span>
                   <span className="text-cyan-400 font-bold">{remaining.toFixed(2)} U</span>
                 </div>
               </div>
@@ -960,7 +960,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                 <span className="text-white font-bold">{selectedToken.targetPool.toLocaleString()} USDT</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1.5">
-                <span>已筹集资金:</span>
+                <span>已支持金额:</span>
                 <span className="text-cyan-400 font-bold">{selectedToken.raisedUsdt.toFixed(2)} USDT</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1.5">

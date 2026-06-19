@@ -246,12 +246,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (launchingOrListed.length >= 1) {
       return launchingOrListed.slice(0, 2).map(t => ({
         name: `${t.name} (${t.symbol})`,
-        info: t.status === "listed" ? "已挂牌" : `募资 ${Math.round(t.progress || 0)}%`
+        info: t.status === "listed" ? "已挂牌" : `支持 ${Math.round(t.progress || 0)}%`
       }));
     }
     return [
-      { name: "魔方算力 (CUBE)", info: "募资 92%" },
-      { name: "矩阵AI (AI-NEO)", info: "募资 45%" }
+      { name: "魔方算力 (CUBE)", info: "支持 92%" },
+      { name: "矩阵AI (AI-NEO)", info: "支持 45%" }
     ];
   }, [stats]);
 
