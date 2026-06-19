@@ -77,7 +77,7 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
     localStorage.setItem("hashcube_streak_count", nextStreak.toString());
     localStorage.setItem("hashcube_last_check_in_date", todayStr);
 
-    const desc = `每日签到打卡 (第 ${nextStreak} 天连签), 获 ${rewardShards} 碎片${isDay7 ? " +1瓶纳米防爆液氮" : ""}`;
+    const desc = `每日签到打卡 (第 ${nextStreak} 天连签), 获 ${rewardShards} Token 利润${isDay7 ? " +1瓶纳米防爆液氮" : ""}`;
     onCheckInCompleted(rewardShards, isDay7, desc);
   };
 
@@ -94,7 +94,7 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
   };
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
       <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
       
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4 mb-6">
@@ -160,10 +160,10 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
               <div className="text-[9px] text-slate-400 font-sans tracking-tight">
                 {day.dayIndex === 7 ? (
                   <span className="text-[8.5px] text-amber-400 font-extrabold bg-amber-950/50 border border-amber-500/20 px-1 py-0.5 rounded uppercase font-mono block truncate">
-                    氮+碎
+                    氮+Token
                   </span>
                 ) : (
-                  <span className="text-slate-500 truncate">碎片</span>
+                  <span className="text-slate-500 truncate">Token</span>
                 )}
               </div>
             </div>
@@ -191,7 +191,7 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
             className={`px-5 py-2.5 rounded-xl font-bold tracking-wider text-xs uppercase transition-all duration-300 w-full sm:w-auto flex items-center justify-center gap-2 ${
               hasCheckedInToday
                 ? "bg-white/5 border border-white/5 text-slate-600 cursor-not-allowed"
-                : "bg-gradient-to-r from-cyan-400 to-indigo-600 text-slate-950 hover:brightness-110 active:scale-95 shadow-[0_2px_15px_rgba(6,182,212,0.3)] cursor-pointer"
+                : "bg-gradient-to-r from-cyan-400 to-blue-600 text-slate-950 hover:brightness-110 active:scale-95 shadow-[0_2px_15px_rgba(6,182,212,0.3)] cursor-pointer"
             }`}
           >
             <Zap className={`size-3.5 ${hasCheckedInToday ? "text-slate-500" : "animate-bounce"}`} />

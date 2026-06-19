@@ -1,6 +1,6 @@
 import React from "react";
 import { UserStats, UserLevel } from "../types";
-import { Cpu, Award, Orbit, PlusCircle, LayoutDashboard, ShoppingCart, Landmark, Gem, HelpCircle, User } from "lucide-react";
+import { Cpu, Network, PlusCircle, LayoutDashboard, KeyRound, PackageOpen, User } from "lucide-react";
 
 interface HeaderProps {
   stats: UserStats;
@@ -19,48 +19,56 @@ export const Header: React.FC<HeaderProps> = ({
 }) => {
   const getBadgeColor = (level: UserLevel) => {
     switch (level) {
-      case UserLevel.ZERO: return "border-cyan-500 text-cyan-400 bg-cyan-950/40 text-glow-cyan";
-      case UserLevel.S1:
-      case UserLevel.S2:
-      case UserLevel.S3: return "border-blue-500 text-blue-400 bg-blue-950/40";
-      case UserLevel.S4:
-      case UserLevel.S5:
-      case UserLevel.S6: return "border-violet-500 text-violet-400 bg-violet-950/40 text-glow-purple";
-      case UserLevel.S7:
-      case UserLevel.S8:
-      case UserLevel.S9: return "border-amber-500 text-yellow-400 bg-amber-950/40 text-glow-gold";
-      default: return "border-cyan-500 text-cyan-400 bg-cyan-950/40 text-glow-cyan";
+      case UserLevel.ZERO: return "border-cyan-500/30 text-cyan-400 bg-cyan-950/20 text-glow-cyan";
+      case UserLevel.S1: return "border-cyan-500/55 text-cyan-400 bg-cyan-950/40 text-glow-cyan";
+      case UserLevel.S2: return "border-cyan-400 text-cyan-300 bg-cyan-900/30 text-glow-cyan";
+      case UserLevel.S3: return "border-cyan-400 text-cyan-300 bg-cyan-900/50 text-glow-cyan";
+      case UserLevel.S4: return "border-amber-500/60 text-amber-400 bg-amber-950/30 text-glow-gold";
+      case UserLevel.S5: return "border-amber-500 text-amber-300 bg-amber-900/40 text-glow-gold";
+      default: return "border-cyan-500/30 text-cyan-400 bg-cyan-950/20 text-glow-cyan";
+    }
+  };
+
+  const getShortLevelName = (level: UserLevel) => {
+    switch (level) {
+      case UserLevel.ZERO: return "S0";
+      case UserLevel.S1: return "S1";
+      case UserLevel.S2: return "S2";
+      case UserLevel.S3: return "S3";
+      case UserLevel.S4: return "S4";
+      case UserLevel.S5: return "S5";
+      default: return "S0";
     }
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-black/40 border-b border-white/10 backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-[#07090e]/90 border-b border-white/10 backdrop-blur-md">
       
       {/* Upper row: Brand Logo & User Wallets */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-wrap justify-between items-center gap-2.5">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 pt-[calc(12px+env(safe-area-inset-top))] pb-3 sm:py-4 flex justify-between items-center gap-1.5">
         
         {/* Brand visual logo */}
-        <div className="flex items-center gap-2 sm:gap-3 group cursor-pointer" onClick={() => setCurrentTab("home")}>
-          <div className="w-8.5 h-8.5 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-400 to-purple-600 rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(34,211,238,0.4)] group-hover:scale-105 transition-transform duration-300">
-            <Orbit className="size-5 sm:size-6 text-white animate-spin" style={{ animationDuration: "12s" }} />
+        <div className="flex items-center gap-1.5 sm:gap-3 group cursor-pointer" onClick={() => setCurrentTab("home")}>
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(34,211,238,0.25)] group-hover:scale-105 transition-transform duration-300">
+            <Cpu stroke="url(#gradient-cyan-blue)" className="size-4.5 sm:size-6 icon-glow-cyan" />
           </div>
           <div className="leading-none">
-            <h1 className="text-sm sm:text-xl font-bold tracking-tighter text-white uppercase flex items-center gap-1">
-              算力有限公司 <span className="text-[8px] sm:text-[10px] text-cyan-400 font-mono tracking-widest">CUBE</span>
+            <h1 className="text-xs sm:text-xl font-bold tracking-tighter text-white uppercase flex items-center gap-0.5">
+              1人算力有限公司 <span className="text-[7.5px] sm:text-[10px] text-cyan-400 font-mono tracking-widest">TOKEN</span>
             </h1>
-            <span className="text-[8px] sm:text-[10px] text-cyan-400 tracking-widest font-mono uppercase mt-0.5 block">HASH POWER CO., LTD</span>
+            <span className="text-[7.5px] sm:text-[10px] text-cyan-400 tracking-widest font-mono uppercase mt-0.5 block hidden sm:block">DEVICE POWER CO., LTD</span>
           </div>
         </div>
 
         {/* Status widgets */}
-        <div className="flex items-center gap-1.5 sm:gap-3">
+        <div className="flex items-center gap-1 sm:gap-3">
           
           {/* USDT Test Wallet */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-2.5 sm:px-4 py-1 sm:py-1.5 flex items-center gap-1.5 sm:gap-2 shadow-sm shrink-0">
+          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
             <div>
               <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block font-mono uppercase tracking-wider">USDT 模拟金</span>
               <span className="text-[10px] sm:text-xs font-mono font-bold text-emerald-400 flex items-center gap-0.5">
-                <span className="md:hidden text-emerald-500 font-sans">U:</span>
+                <span className="text-emerald-500 font-sans text-[8px] sm:text-[10px] sm:hidden">U:</span>
                 {usdtBalance.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 1 })} <span className="text-[8px] font-normal text-slate-400 hidden sm:inline">U</span>
               </span>
             </div>
@@ -68,27 +76,28 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               id="btn-mint-usdt"
               onClick={onAddTestUsdt}
-              className="p-1 rounded-full bg-white/10 text-slate-300 hover:text-emerald-400 hover:bg-white/20 transition-all cursor-pointer touch-manipulation min-w-[24px] min-h-[24px] flex items-center justify-center"
+              className="p-0.5 rounded-full bg-white/10 text-slate-300 hover:text-emerald-400 hover:bg-white/20 transition-all cursor-pointer touch-manipulation min-w-[20px] min-h-[20px] flex items-center justify-center"
               title="获取 1,000 USDT $测试体验金"
             >
-              <PlusCircle className="size-3.5" />
+              <PlusCircle stroke="url(#gradient-emerald-teal)" className="size-3 icon-glow-emerald" />
             </button>
           </div>
 
           {/* Crystals widget */}
-          <div className="bg-white/5 border border-white/10 rounded-full px-2.5 sm:px-4 py-1 sm:py-1.5 flex items-center gap-1.5 shadow-sm shrink-0">
+          <div className="bg-white/5 border border-white/10 rounded-full px-2 sm:px-4 py-1 flex items-center gap-1 shadow-sm shrink-0">
             <div>
-              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block block font-mono uppercase tracking-wider">已固化晶体 (CRYSTAL)</span>
-              <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-400 text-glow-gold flex items-center gap-1 leading-none">
-                <Gem className="size-3 text-yellow-400" />
-                {stats.hashCrystals || 0} <span className="text-[8px] font-normal text-slate-400 hidden sm:inline">颗</span>
+              <span className="text-[8px] sm:text-[8.5px] text-slate-400 hidden md:block block font-mono uppercase tracking-wider">API/URL 凭证</span>
+              <span className="text-[10px] sm:text-xs font-mono font-bold text-yellow-400 text-glow-gold flex items-center gap-0.5 leading-none">
+                <PackageOpen stroke="url(#gradient-amber-orange)" className="size-3 icon-glow-amber" />
+                {stats.hashCrystals || 0} <span className="text-[8px] font-normal text-slate-400 hidden sm:inline">组</span>
               </span>
             </div>
           </div>
 
           {/* Miner Level badge */}
-          <div className={`flex items-center gap-1 bg-white/5 border px-2.5 sm:px-4 py-1 sm:py-1.5 rounded-full text-[9px] sm:text-xs font-bold leading-none capitalize shrink-0 ${getBadgeColor(stats.level)}`}>
-            {stats.level}
+          <div className={`flex items-center gap-0.5 bg-white/5 border px-2 sm:px-4 py-1 rounded-full text-[9px] sm:text-xs font-bold leading-none capitalize shrink-0 ${getBadgeColor(stats.level)}`}>
+            <span className="sm:hidden">{getShortLevelName(stats.level)}</span>
+            <span className="hidden sm:inline">{stats.level}</span>
           </div>
 
         </div>
@@ -107,11 +116,11 @@ export const Header: React.FC<HeaderProps> = ({
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <LayoutDashboard className="size-4" />
-            【公司总览】
+            <LayoutDashboard stroke={currentTab === "home" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "home" ? "icon-glow-cyan" : ""}`} />
+            总览
           </button>
 
-          {/* 2. 算力雇员系统 */}
+          {/* 2. 团队节点 */}
           <button
             onClick={() => setCurrentTab("tower")}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs md:text-sm font-semibold rounded-xl transition-all duration-200 shrink-0 cursor-pointer border ${
@@ -120,8 +129,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <Orbit className="size-4 animate-spin" style={{ animationDuration: "12s" }} />
-            【算力雇员系统】
+            <Network stroke={currentTab === "tower" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "tower" ? "icon-glow-cyan" : ""}`} />
+            团队节点
           </button>
 
           {/* 3. AI引擎机房 */}
@@ -133,8 +142,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <Cpu className="size-4" />
-            【AI引擎机房】
+            <Cpu stroke={currentTab === "store" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "store" ? "icon-glow-cyan" : ""}`} />
+            设备机房
           </button>
 
           {/* 4. 经营物资库 */}
@@ -146,8 +155,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <Landmark className="size-4" />
-            【经营物资库】
+            <KeyRound stroke={currentTab === "items" ? "url(#gradient-emerald-teal)" : "currentColor"} className={`size-4 ${currentTab === "items" ? "icon-glow-emerald" : ""}`} />
+            Token 服务
           </button>
 
           {/* 5. 创始人后台 */}
@@ -159,8 +168,8 @@ export const Header: React.FC<HeaderProps> = ({
                 : "text-slate-400 bg-white/5 border-white/5 hover:bg-white/10 hover:text-slate-200 hover:border-white/10"
             }`}
           >
-            <User className="size-4" />
-            【创始人后台】
+            <User stroke={currentTab === "my" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "my" ? "icon-glow-cyan" : ""}`} />
+            我的后台
           </button>
         </nav>
       </div>

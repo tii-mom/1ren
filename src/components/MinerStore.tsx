@@ -398,14 +398,14 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
             <Flame className="size-5 text-cyan-400 animate-bounce" />
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider">真实分布式AI智能代工引擎托管说明</h4>
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">分布式 AI 算力并网服务说明</h4>
             <p className="text-[10px] text-slate-400 font-medium leading-normal mt-0.5">
-              租赁配置后的算力设备将交由算力魔方智能组网调度协议合并至水电/风能充足的绿色高效能云端园区内并发集群，主要面向企业级人工智能推理/训练提供高频分布式承接服务，不涉及任何虚构杠杆、直发虚拟代币。
+              本地部署并网的设备由平台进行全局网络调度和协同维护，主要承接大模型微调、训练和 API 接口调用任务。页面数值为模拟参考，不代表固定回报。
             </p>
           </div>
         </div>
         <div className="text-[10px] text-slate-500 text-right font-mono font-bold shrink-0">
-          SECURED DECENTRALIZED PROTOCOL // VERSION 1.5.0
+          LOCAL DEPLOYMENT & GRID SERVICE
         </div>
       </div>
 
@@ -435,13 +435,13 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
 
               <div className="text-left mb-4 sm:mb-6 space-y-1 pr-8">
                 <span className="text-[9px] sm:text-[10px] text-cyan-400 font-mono font-extrabold tracking-widest block uppercase">CROSS-HARDWARE PARAMETER BLUEPRINT</span>
-                <h3 className="text-sm sm:text-lg font-extrabold text-white leading-snug">4款主力AI算力引擎托管规格及周期参数一览（ROI Spec Table）</h3>
-                <p className="text-[11px] text-slate-400">帮助您根据预算及收益偏好快速做出最优租赁决策。</p>
+                <h3 className="text-sm sm:text-lg font-extrabold text-white leading-snug">4 款并网 GPU 设备规格对比</h3>
+                <p className="text-[11px] text-slate-400">根据预算、并网周期和动态产出参考选择设备。</p>
               </div>
 
               {/* Mobile horizontal swipe notice */}
               <div className="block lg:hidden text-left text-cyan-400/80 font-sans text-[10px] mb-2 tracking-wide font-medium">
-                💡 左右滑动表格可查看全部4款AI算力引擎的详细对比
+                💡 左右滑动表格可查看全部 4 款 AI 算力设备的详细对比
               </div>
 
               <div className="overflow-x-auto border border-white/10 rounded-2xl bg-black/45 scrollbar-thin scrollbar-thumb-slate-800">
@@ -449,19 +449,19 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
                   <thead>
                     <tr className="border-b border-white/10 bg-white/5 text-slate-400 font-mono font-extrabold text-[9px] sm:text-[10px] tracking-wider uppercase">
                       <th className="p-3 sm:p-4">核心参数指标 (Technical Parameter)</th>
-                      <th className="p-3 sm:p-4 text-cyan-400">基础推理引擎 (S1资格)</th>
-                      <th className="p-3 sm:p-4 text-violet-400">进阶训练引擎 (订单分配)</th>
-                      <th className="p-3 sm:p-4 text-yellow-400">旗舰集群引擎 (弹性调度)</th>
-                      <th className="p-3 sm:p-4 text-pink-500">创世算力主节点 (上市铭牌)</th>
+                      <th className="p-3 sm:p-4 text-cyan-400">A100 算力单元 (S1级)</th>
+                      <th className="p-3 sm:p-4 text-violet-400">8 × H100 集群 (S2级)</th>
+                      <th className="p-3 sm:p-4 text-yellow-400">H200 NVL 集群 (S3级)</th>
+                      <th className="p-3 sm:p-4 text-pink-500">GH200 超级集群 (S5级)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 text-slate-300 font-medium font-sans">
                     <tr className="hover:bg-white/[0.01] transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">物理工艺制程 (Node)</td>
-                      <td className="p-3 sm:p-4 font-mono text-cyan-300">28nm Litho CPU</td>
-                      <td className="p-3 sm:p-4 font-mono text-violet-300">14nm FinFET</td>
-                      <td className="p-3 sm:p-4 font-mono text-yellow-300">7nm EUV High-K</td>
-                      <td className="p-3 sm:p-4 font-mono text-pink-400 font-bold">Sub-2nm Carbon</td>
+                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">GPU 硬件规格与内存 (GPU & Memory)</td>
+                      <td className="p-3 sm:p-4 font-mono text-cyan-300">A100 80GB PCIe</td>
+                      <td className="p-3 sm:p-4 font-mono text-violet-300">8 × H100 80GB SXM5</td>
+                      <td className="p-3 sm:p-4 font-mono text-yellow-300">8 × H200 NVL 141GB</td>
+                      <td className="p-3 sm:p-4 font-mono text-pink-400 font-bold">GH200 Grace Hopper 576GB</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
                       <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">配置资产成本 (Cost)</td>
@@ -471,11 +471,11 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
                       <td className="p-3 sm:p-4 font-mono text-white font-extrabold">10000 USDT</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">契约有效期 (Days)</td>
+                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">并网周期 (Days)</td>
                       <td className="p-3 sm:p-4">30 天</td>
                       <td className="p-3 sm:p-4">60 天</td>
                       <td className="p-3 sm:p-4">90 天</td>
-                      <td className="p-3 sm:p-4 text-pink-400 font-bold">永续代工 (终身)</td>
+                      <td className="p-3 sm:p-4 text-pink-400 font-bold">长期并网 (终身)</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
                       <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">日化产出率 (Yield Ratio)</td>
@@ -496,28 +496,28 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
                       <td className="p-3 sm:p-4">约 25 ~ 30 天</td>
                       <td className="p-3 sm:p-4">约 23 ~ 28 天</td>
                       <td className="p-3 sm:p-4 font-semibold text-cyan-300">约 18 ~ 24 天</td>
-                      <td className="p-3 sm:p-4 text-emerald-400 font-bold">极速 16 ~ 21 天</td>
+                      <td className="p-3 sm:p-4 text-emerald-400 font-bold">约 16 ~ 21 天</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">晋升及解禁层级</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">解锁 S1 职级及 1-3 代深层代工。</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">解锁 S4-S5 职级，完全激活 1-7 代全额管理分红，算力不留损</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">解锁 S7-S8 职级并获弹性调度权，免液冷多维折损率 +10%</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-pink-400 font-semibold">无阻碍9代终极星网提成 + 独家全球池分红</td>
+                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">团队等级权限</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">解锁 S1 级网络拓扑。</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">满足团队条件后支持 S2 级调度。</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">满足团队条件后支持 S3 级调度。</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-pink-400 font-semibold">支持 S5 级骨干中枢决策席位。</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">纳米冷却维护 (Thermal)</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">高热触发50%安全熔降，需加注液氮恢复并赚取+15%补偿</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">赠送 1瓶 液氮。同样受50%衰退制控，液氮完美重置</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-yellow-400 font-semibold">全自动闭闭主动液体，100%免热衰退</td>
-                      <td className="p-3 sm:p-4 text-[10px] text-green-400 font-semibold">黑固态硅工艺，全寿命不损，免除维护</td>
+                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">降频与温控维护</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">需定期加注温控维护液以恢复超频产出。</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-slate-400">散热条件良好，降频概率较低。</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-yellow-400 font-semibold">平台优先保障液冷温控，极低降频率。</td>
+                      <td className="p-3 sm:p-4 text-[10px] text-green-400 font-semibold">全天候专属液冷运维队列，保障满载运行。</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">安全与风险保障</td>
-                      <td className="p-3 sm:p-4 font-sans text-[10px] text-slate-400">基础设备险全包，24小时故障迁移。</td>
-                      <td className="p-3 sm:p-4 font-sans text-[10px] text-violet-300">骨干设备，包含高频波动重置险，高热过载保障</td>
-                      <td className="p-3 sm:p-4 font-sans text-[10px] text-yellow-300 font-semibold">专属硬件级双路容灾备援，保障释放</td>
-                      <td className="p-3 sm:p-4 font-semibold text-[10px] text-pink-400">国家级冷水灾备物理防线保障，享有最高安全权</td>
+                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">网络故障冗余与安全保障</td>
+                      <td className="p-3 sm:p-4 font-sans text-[10px] text-slate-400">基础并网冗余，24小时故障迁移。</td>
+                      <td className="p-3 sm:p-4 font-sans text-[10px] text-violet-300">骨干节点，支持高频负载自适应调节与任务冗余。</td>
+                      <td className="p-3 sm:p-4 font-sans text-[10px] text-yellow-300 font-semibold">核心并网物理集群，硬件级双路 NVLink 备援，无损切换。</td>
+                      <td className="p-3 sm:p-4 font-semibold text-[10px] text-pink-400">骨干中枢级冷化温控与灾备物理防护，享有最高调度优先级。</td>
                     </tr>
                   </tbody>
                 </table>

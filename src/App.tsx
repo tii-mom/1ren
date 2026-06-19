@@ -47,7 +47,7 @@ export default function App() {
       const loadedT = loadTasks();
       const loadedR = loadRecords();
       
-      setStats(loadedS || INITIAL_STATS);
+      setStats(loadedS ? { ...INITIAL_STATS, ...loadedS } : INITIAL_STATS);
       setActiveMiners(Array.isArray(loadedM) ? loadedM : []);
       setTasks(loadedT || INITIAL_TASKS);
       setRecords(Array.isArray(loadedR) ? loadedR : []);
@@ -120,27 +120,34 @@ export default function App() {
         // Let's speed it up by a healthy simulation multiplier so they see things actually progress!
         const simulationFactor = 15; // Speed multiplier for impressive real-time feedback
         const rewardPerSec = (miner.cost * miner.dailyYield * miner.efficiency * simulationFactor) / 3600;
-        shardBonus += rewardPerSec;
+        
+        // For demo miner: cost is 0, so reward is based on a default virtual cost of 100 U
+        const actualRewardPerSec = miner.isDemo 
+          ? (100 * miner.dailyYield * miner.efficiency * simulationFactor) / 3600
+          : rewardPerSec;
 
-        // Decrease efficiency slowly (chips heat up!)
-        // 0.003 units per second means in ~150-200 seconds the miner falls to 50% half-life decay
-        let nextInEfficiency = miner.efficiency - 0.003;
+        shardBonus += actualRewardPerSec;
+
+        // Decrease efficiency or check aging
+        let nextInEfficiency = miner.efficiency;
         let nextStatus = miner.status;
 
-        // Special rule for free demo miner expiry simulator (stays active for roughly 120 ticks, then stops)
+        // Special rule for free demo miner expiry simulator (stops after 180 seconds of live use for impressive countdown demo)
         if (miner.isDemo) {
           const ageSecs = (Date.now() - new Date(miner.purchasedAt).getTime()) / 1000;
-          if (ageSecs > 180) { // stops after 180 seconds of live use for impressive countdown demo
+          if (ageSecs > 180) { // stops after 180 seconds of live use
             nextStatus = "stopped";
             nextInEfficiency = 0;
             hasChange = true;
           }
-        }
-
-        if (nextInEfficiency <= 0.5 && nextStatus === "running") {
-          nextStatus = "decayed";
-          nextInEfficiency = 0.5; // caps at 50% decay
-          hasChange = true;
+        } else {
+          // Standard miner aging: when accumulatedRewards >= cost * 0.5, it decays
+          const currentAccumulated = miner.accumulatedRewards + actualRewardPerSec;
+          if (currentAccumulated >= miner.cost * 0.5 && miner.status === "running") {
+            nextStatus = "decayed";
+            nextInEfficiency = 0.5; // drops to 50% efficiency
+            hasChange = true;
+          }
         }
 
         if (miner.efficiency !== nextInEfficiency || miner.status !== nextStatus) {
@@ -151,7 +158,7 @@ export default function App() {
           ...miner,
           efficiency: Math.max(0, parseFloat(nextInEfficiency.toFixed(4))),
           status: nextStatus,
-          accumulatedRewards: miner.accumulatedRewards + rewardPerSec
+          accumulatedRewards: miner.accumulatedRewards + actualRewardPerSec
         };
       });
 
@@ -166,12 +173,10 @@ export default function App() {
           const added = shardBonus * (hasBuff ? 2.0 : 1.0);
           const nextFragments = prev.hashFragments + added;
           
-          // Auto-synthesize hint trigger
           if (prev.hashFragments < 100 && nextFragments >= 100) {
-            // Queue a subtle info alert
             triggerNotification(
-              "⚙️ 晶体融合反应包就绪",
-              "您的账户算力碎片已积攒满 100 个！可以点击大盘下方或前往[我的矿仓]进行高灵能算力晶体聚变合成啦！",
+              "Token 已满足打包条件",
+              "账户余额已满 100 Token。您可以生成 API Key、访问 URL，或提交平台回收申请。",
               "crystal"
             );
           }
@@ -187,7 +192,7 @@ export default function App() {
       // Check double buff expiry
       if (currentStats.buffActiveUntil && new Date(currentStats.buffActiveUntil).getTime() <= Date.now()) {
         setStats(prev => ({ ...prev, buffActiveUntil: null }));
-        addRecordLog("buff", 0, "超限突袭两倍收益契约结束冷却。");
+        addRecordLog("buff", 0, "算力加速时段结束。");
       }
 
     }, 1000);
@@ -198,13 +203,13 @@ export default function App() {
 
   // Automatically recompute base and team hash power relative to active miners and dynamic upgrades
   useEffect(() => {
-    // 10.0 is the baseline free CPU allocation
+    // 50.0 is the baseline free P license allocation
     const minersBase = activeMiners.reduce((sum, m) => {
       if (m.status === "stopped") return sum;
       // An M1 miner (100U) contributes its cost * coefficient * efficiency
       // Under full efficiency (1.0), 100U adds 15 T/s. Under decay (0.5), it adds 7.5 T/s.
       return sum + (m.cost * 0.15 * m.efficiency);
-    }, 10.0);
+    }, 50.0);
 
     // Auto calculate user affiliation rank
     const activeNonDemoSumCost = activeMiners
@@ -212,51 +217,44 @@ export default function App() {
       .reduce((sum, m) => sum + m.cost, 0);
 
     let calculatedLevel = UserLevel.ZERO;
-    let computedTeam = 45.5; // Baseline default simulated team resonance
+    let computedTeam = 0.0; // Baseline default team resonance (S0 gets 0)
 
-    // Count team referrals
-    const totalTeamReferrals = MOCK_REFERRALS.length; // 15 referrals in mock dataset
-    const directReferrals = MOCK_REFERRALS.filter(r => r.depth === 1).length; // 2 in mock
+    const directCount = stats.directReferrals;
+    const totalCount = stats.totalReferrals;
 
-    // Mapping S1 - S9 gamified structure based on user investment & referrals
-    if (activeNonDemoSumCost >= 10000 && totalTeamReferrals >= 15) {
-      calculatedLevel = UserLevel.S9; // 算力集团联席CEO
-      computedTeam = 480.0;
-    } else if (activeNonDemoSumCost >= 2000 && totalTeamReferrals >= 15) {
-      calculatedLevel = UserLevel.S7; // 算力集团合伙人 (or S8/S9 if referrals grow)
-      computedTeam = 280.0;
-    } else if (activeNonDemoSumCost >= 500 && totalTeamReferrals >= 10) {
-      calculatedLevel = UserLevel.S5; // 算力集团副总裁
-      computedTeam = 160.0;
-    } else if (activeNonDemoSumCost >= 500) {
-      calculatedLevel = UserLevel.S4; // 区域算力总裁
-      computedTeam = 120.0;
-    } else if (activeNonDemoSumCost >= 100 && directReferrals >= 5) {
-      calculatedLevel = UserLevel.S3; // 算力分公司总监
-      computedTeam = 95.0;
-    } else if (activeNonDemoSumCost >= 100 && directReferrals >= 3) {
-      calculatedLevel = UserLevel.S2; // 算力部门经理
-      computedTeam = 75.0;
-    } else if (activeNonDemoSumCost >= 100) {
-      calculatedLevel = UserLevel.S1; // 算力工作室创始人
+    // Mapping S1-S5 DePIN structure based on user investment and team nodes.
+    if (activeNonDemoSumCost >= 100) {
+      calculatedLevel = UserLevel.S1;
       computedTeam = 55.0;
+
+      if (activeNonDemoSumCost >= 500 && directCount >= 3) {
+        calculatedLevel = UserLevel.S2;
+        computedTeam = 120.0;
+      }
+      if (activeNonDemoSumCost >= 2000 && directCount >= 5) {
+        calculatedLevel = UserLevel.S3;
+        computedTeam = 260.0;
+      }
+      if (totalCount >= 15) {
+        calculatedLevel = UserLevel.S4;
+        computedTeam = 500.0;
+      }
+      if (totalCount >= 50) {
+        calculatedLevel = UserLevel.S5;
+        computedTeam = 1000.0;
+      }
     }
 
     setStats((prev) => {
-      // Safely restrict Zero-tier users to max 100 T/s team cap
-      let finalTeam = computedTeam;
-      if (calculatedLevel === UserLevel.ZERO && finalTeam > 100) {
-        finalTeam = 100;
-      }
       return {
         ...prev,
         baseHashpower: parseFloat(minersBase.toFixed(2)),
-        teamHashpower: parseFloat(finalTeam.toFixed(2)),
+        teamHashpower: parseFloat(computedTeam.toFixed(2)),
         level: calculatedLevel
       };
     });
 
-  }, [activeMiners]);
+  }, [activeMiners, stats.directReferrals, stats.totalReferrals]);
 
 
   // Helpers
@@ -275,8 +273,8 @@ export default function App() {
   const handleAddTestUsdt = () => {
     setUsdtBalance((prev) => prev + 1000.0);
     triggerNotification(
-      "虚拟机床充值完成",
-      "成功分配 +1,000.0 USDT 虚拟机床体验金！快去[设备租赁 / 资产]挑选高频AI算力推理引擎组装代工，极具算力溢出穿透力吧！",
+      "模拟余额已补充",
+      "已增加 1,000 USDT 测试额度。您可以购买企业级 GPU 并网部署，或继续使用自有设备产出少量 Token。",
       "success"
     );
   };
@@ -288,13 +286,13 @@ export default function App() {
     let label = "";
     if (taskKey === "watchAd") {
       reward = 2.0;
-      label = "观看区视频广告行为";
+      label = "设备在线检测";
     } else if (taskKey === "likeContent") {
       reward = 1.0;
-      label = "节点扩建社区点赞共鸣";
+      label = "AI 测试任务";
     } else if (taskKey === "shareMoments") {
       reward = 3.0;
-      label = "宣传绿色低碳算力朋友圈扩散";
+      label = "邀请链接分享";
     }
 
     setTasks((prev) => ({ ...prev, [taskKey]: true }));
@@ -304,10 +302,10 @@ export default function App() {
       accumulatedFragments: prev.accumulatedFragments + reward
     }));
 
-    addRecordLog("mining", reward, `每日打卡任务：${label}已审结。`);
+    addRecordLog("mining", reward, `每日任务：${label}已完成。`);
     triggerNotification(
-      "✅ 共建打卡完成",
-      `赞颂您的生态奉献！由于您的代工传播，系统额外回馈 ${reward} 个算力碎片！已经瞬时入账、并入大盘累加。`,
+      "任务已完成",
+      `系统已结算 ${reward} Token。余额可用于生成 API/URL、设备维护或平台回收。`,
       "success"
     );
   };
@@ -321,17 +319,17 @@ export default function App() {
       buffActiveUntil: expiryTime
     }));
 
-    addRecordLog("buff", 0, "点击激发虫洞：超级能量突袭一小时算力加倍");
+    addRecordLog("buff", 0, "开启一小时算力加速，产出倍率提升。");
     triggerNotification(
-      "⚔️ 突击暴击激活 (200%倍率)",
-      "由于虫洞产生器高热共谐，全站物理挖矿与社区叠加产率极速翻倍 (200%效率)！倒计时60分钟正式开拔运转，不要错过黄金代工收益！",
+      "算力加速已开启",
+      "接下来 60 分钟内，自有设备和团队节点的 Token 产出会按加速倍率结算。",
       "success"
     );
   };
 
   const handleSynthesize = () => {
     if (stats.hashFragments < 100) {
-      triggerNotification("⚠️ 自检熔炉失败", "账户内的算力碎片累计未满 100 颗。快去完成每日打卡或租赁更多高性能矿代工槽！", "warn");
+      triggerNotification("Token 不足", "生成一组 API/URL 需要 100 Token。您可以连接手机、完成每日任务或购买高性能并网设备继续产出。", "warn");
       return;
     }
 
@@ -342,17 +340,17 @@ export default function App() {
       totalSynthesized: prev.totalSynthesized + 1
     }));
 
-    addRecordLog("synthesize", 100, "算力熔合聚变：聚变 100 碎片固化出 1 颗中枢晶体");
+    addRecordLog("synthesize", 100, "消耗 100 Token 生成 1 组可用算力凭证。");
     triggerNotification(
-      "🌟 固化合成圆满宣告",
-      "能量场运转圆满！成功消减100枚低聚碎片，并聚变凝结出 1 颗高度稳定的【数字固化算力晶体】！持有此物可大幅提高全球排名及后期轻奢提现优先契契。",
+      "API/URL 凭证已生成",
+      "已消耗 100 Token，生成 1 组算力服务凭证。您可以用于自用、对外出售或提交平台回收。",
       "success"
     );
   };
 
   const handleBuyCoolant = (cost: number) => {
     if (stats.hashFragments < cost) {
-      triggerNotification("⚠️ 易耗库置办失败", "算力碎片储备未达 50 颗，无法置换除垢液。", "warn");
+      triggerNotification("Token 不足", "购买设备维护包需要 50 Token。", "warn");
       return;
     }
 
@@ -362,17 +360,17 @@ export default function App() {
       coolantCount: prev.coolantCount + 1
     }));
 
-    addRecordLog("coolant", cost, "花费 50 个算力碎片置办纳米冷却液一瓶。");
+    addRecordLog("coolant", cost, "花费 50 Token 购买设备维护包。");
     triggerNotification(
-      "🧪 冷却装备到仓",
-      "化学防护置办成功！耗散 50 碎片购得一瓶新型防半衰纳米冷却灌洗液，已安全放入账户行囊。前往‘我的矿仓’找到高阻衰退设备执行注入吧！",
+      "设备维护包已入库",
+      "已扣除 50 Token。可在后台为降频设备执行维护，恢复设备产出效率。",
       "success"
     );
   };
 
   const handleApplyCoolant = (minerId: string) => {
     if (stats.coolantCount < 1) {
-      triggerNotification("⚠️ 维护物资短缺", "您的防爆包内当前一滴冷却常温液也未存储，请点击合成台旁购买置办一整瓶！", "warn");
+      triggerNotification("维护包不足", "当前没有可用设备维护包。请先在物资页或后台购买。", "warn");
       return;
     }
 
@@ -387,7 +385,7 @@ export default function App() {
         if (m.id === minerId) {
           return {
             ...m,
-            efficiency: 1.15, // +15% performance boost
+            efficiency: 1.10, // +10% performance boost
             status: "running"
           };
         }
@@ -395,10 +393,10 @@ export default function App() {
       })
     );
 
-    addRecordLog("coolant", 1, `设备【${targetMiner.name}】注入灌洗维护。`);
+    addRecordLog("coolant", 1, `设备【${targetMiner.name}】完成维护。`);
     triggerNotification(
-      "💦 注入清洗成功 (+15% 极其狂暴)",
-      `冷却高能介质注入完毕！彻底祛除【${targetMiner.name}】的物理积碳污浊，设备恢复115%的极高状态物理产率！额外回馈全家永久 +15% 物理溢出算力红利！`,
+      "设备维护完成",
+      `【${targetMiner.name}】已恢复运行，当前效率提升至 110%。`,
       "success"
     );
   };
@@ -409,7 +407,7 @@ export default function App() {
     const nowIso = new Date().toISOString();
     const demoMiner: ActiveMiner = {
       id: "demo-miner",
-      name: "免费新手智能云代工槽",
+      name: "本地显卡共享算力体验节点",
       cost: 0,
       dailyYield: 0.012, // 1.2% base
       contractDays: 7,
@@ -424,10 +422,10 @@ export default function App() {
     setActiveMiners((prev) => [demoMiner, ...prev]);
     setStats((prev) => ({ ...prev, hasClaimedDemo: true }));
 
-    addRecordLog("mining", 0, "空投部署并激活免费体验期AI算力自研引擎 (7天试用)");
+    addRecordLog("mining", 0, "激活免费本地显卡共享算力体验节点 (7天试用)");
     triggerNotification(
-      "新手孵化体验引擎部署完成",
-      "尊敬的合伙人！免费体验AI算力引擎已为您自动实报部署至您的公司算力库里！提供 10 T/s 物理算效以开启分布式代工试练，请多加关注注入液氮冷媒维护流程！",
+      "本地共享节点已激活",
+      "系统已为您开启 7 天体验节点。您可以用自有本地设备并网共享算力，产出少量 Token。",
       "success"
     );
   };
@@ -435,8 +433,8 @@ export default function App() {
   const handleLeaseMiner = (template: MinerTemplate) => {
     if (usdtBalance < template.cost) {
       triggerNotification(
-        "❌ 虚拟机床入金失败",
-        `组装【${template.name}】需要 ${template.cost} USDT 体验代用卷，而您的钱包剩余可用余额不足！请点击顶部导航区微小的‘+’按钮免费补充体验金哦。`,
+        "余额不足",
+        `购买【${template.name}】需要 ${template.cost} USDT。可点击顶部 + 补充模拟测试额度。`,
         "warn"
       );
       return;
@@ -466,10 +464,10 @@ export default function App() {
     };
 
     setActiveMiners((prev) => [nextMiner, ...prev]);
-    addRecordLog("mining", template.cost, `成功租借组装 ${template.name} 设备一台。`);
+    addRecordLog("mining", template.cost, `本地部署并激活并网 ${template.name} 算力设备。`);
     triggerNotification(
-      "星网并网托管部署成功",
-      `恭喜！成功耗用 ${template.cost}U 签约组装【${template.name}】。设备已直连四川凉山水电代工网端口，已并网释放哈希物理运算流量！`,
+      "设备部署并网成功",
+      `已扣除 ${template.cost} USDT 并本地部署激活【${template.name}】。设备会并网微调训练产生 Token，可用于 API/URL、出售或平台回收。`,
       "success"
     );
     setCurrentTab("my"); // Auto jump to My Profile to check
@@ -477,7 +475,7 @@ export default function App() {
 
   const handleRedeemItem = (item: StoreItem) => {
     if (stats.hashFragments < item.costFragments) {
-      triggerNotification("⚠️ 自检商检阻断", `兑换该精品需要花费 ${item.costFragments.toLocaleString()} 碎片，您的可用算力碎片额度不足以结算！`, "warn");
+      triggerNotification("Token 不足", `该项目需要 ${item.costFragments.toLocaleString()} Token，当前余额不足。`, "warn");
       return;
     }
 
@@ -487,10 +485,10 @@ export default function App() {
       hashFragments: prev.hashFragments - item.costFragments
     }));
 
-    addRecordLog("exchange", item.costFragments, `兑换：置购「${item.name}」商品。`);
+    addRecordLog("exchange", item.costFragments, `兑换或开通「${item.name}」。`);
     triggerNotification(
-      "实物交割与并网托管单生成",
-      `恭喜您！系统成功受理您的兑换。消耗 ${item.costFragments.toLocaleString()} 个碎片起航。顺丰冷链物理寄递条码、或对应的物理矿场水电托管代托管契约已派发至您的邮箱。请及时留意。`,
+      "订单已受理",
+      `已消耗 ${item.costFragments.toLocaleString()} Token。实体商品会进入发货流程，算力服务会生成对应凭证。`,
       "success"
     );
   };
@@ -504,15 +502,37 @@ export default function App() {
     }));
     addRecordLog("mining", rewardShards, description);
     triggerNotification(
-      "并网签到成功 (Check-in Verified)",
-      `每日公链对冲节点自检完成！获得 +${rewardShards} 算力碎片! ${addCoolant ? "额外空投高阻半衰「纳米防爆冷却液液氮」 1 瓶！" : ""}`,
+      "设备签到成功",
+      `今日在线检测完成，获得 +${rewardShards} Token。${addCoolant ? "额外获得 1 个设备维护包。" : ""}`,
       "success"
     );
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans tracking-tight relative overflow-x-hidden">
+    <div className="h-screen h-[100dvh] w-screen overflow-hidden flex flex-col bg-slate-950 text-slate-100 font-sans tracking-tight relative select-none">
       
+      {/* SVG Linear Gradient definitions for cyberpunk icon strokes */}
+      <svg className="sr-only" width="0" height="0" style={{ position: "absolute", width: 0, height: 0 }} aria-hidden="true">
+        <defs>
+          <linearGradient id="gradient-cyan-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#22d3ee" />
+            <stop offset="100%" stopColor="#3b82f6" />
+          </linearGradient>
+          <linearGradient id="gradient-purple-pink" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#c084fc" />
+            <stop offset="100%" stopColor="#db2777" />
+          </linearGradient>
+          <linearGradient id="gradient-emerald-teal" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#34d399" />
+            <stop offset="100%" stopColor="#0d9488" />
+          </linearGradient>
+          <linearGradient id="gradient-amber-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fbbf24" />
+            <stop offset="100%" stopColor="#ea580c" />
+          </linearGradient>
+        </defs>
+      </svg>
+
       {/* Visual background lights for massive atmospheric cyberpunk aura */}
       <div className="absolute top-0 left-[-15%] w-[60%] h-[500px] bg-gradient-to-tr from-cyan-500/10 to-violet-600/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-15%] w-[60%] h-[500px] bg-gradient-to-bl from-purple-600/10 to-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
@@ -527,52 +547,96 @@ export default function App() {
       />
 
       {/* Master Main Container Body and Page switches */}
-      <main className="max-w-7xl mx-auto px-4 py-6 md:py-8 pb-24 md:pb-8 min-h-[calc(100vh-140px)]">
-        
-        {currentTab === "home" && (
-          <Dashboard
-            stats={stats}
-            tasks={tasks}
-            activeMiners={activeMiners}
-            onCompleteTask={handleCompleteTask}
-            onTriggerBuff={handleTriggerBuff}
-            onSynthesize={handleSynthesize}
-            onCheckInCompleted={handleCheckInCompleted}
-          />
-        )}
+      <main className="flex-1 overflow-y-auto max-w-7xl w-full mx-auto px-4 py-4 md:py-6 pb-[calc(88px+env(safe-area-inset-bottom))] md:pb-8 flex flex-col justify-between">
+        <div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentTab}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+              className="w-full"
+            >
+              {currentTab === "home" && (
+                <Dashboard
+                  stats={stats}
+                  tasks={tasks}
+                  activeMiners={activeMiners}
+                  onCompleteTask={handleCompleteTask}
+                  onTriggerBuff={handleTriggerBuff}
+                  onSynthesize={handleSynthesize}
+                  onCheckInCompleted={handleCheckInCompleted}
+                />
+              )}
 
-        {currentTab === "store" && (
-          <MinerStore
-            stats={stats}
-            activeMiners={activeMiners}
-            onLeaseMiner={handleLeaseMiner}
-          />
-        )}
+              {currentTab === "store" && (
+                <MinerStore
+                  stats={stats}
+                  activeMiners={activeMiners}
+                  onLeaseMiner={handleLeaseMiner}
+                />
+              )}
 
-        {currentTab === "tower" && (
-          <ResonanceTower stats={stats} />
-        )}
+              {currentTab === "tower" && (
+                <ResonanceTower stats={stats} />
+              )}
 
-        {currentTab === "items" && (
-          <ItemStore
-            stats={stats}
-            onRedeemItem={handleRedeemItem}
-            onBuyCoolant={handleBuyCoolant}
-          />
-        )}
+              {currentTab === "items" && (
+                <ItemStore
+                  stats={stats}
+                  onRedeemItem={handleRedeemItem}
+                  onBuyCoolant={handleBuyCoolant}
+                />
+              )}
 
-        {currentTab === "my" && (
-          <MyProfile
-            stats={stats}
-            activeMiners={activeMiners}
-            records={records}
-            onSynthesize={handleSynthesize}
-            onBuyCoolant={handleBuyCoolant}
-            onApplyCoolant={handleApplyCoolant}
-            onClaimDemoMiner={handleClaimDemoMiner}
-          />
-        )}
+              {currentTab === "my" && (
+                <MyProfile
+                  stats={stats}
+                  activeMiners={activeMiners}
+                  records={records}
+                  onSynthesize={handleSynthesize}
+                  onBuyCoolant={handleBuyCoolant}
+                  onApplyCoolant={handleApplyCoolant}
+                  onClaimDemoMiner={handleClaimDemoMiner}
+                  onUpdateSimulatedStats={(updater) => setStats(updater)}
+                  onForceAgeMiner={() => {
+                    setActiveMiners((prev) => {
+                      if (prev.length === 0) return prev;
+                      // find first running non-demo miner and force set its status to decayed
+                      let aged = false;
+                      return prev.map((m) => {
+                        if (!m.isDemo && m.status === "running" && !aged) {
+                          aged = true;
+                          return {
+                            ...m,
+                            accumulatedRewards: m.cost * 0.5,
+                            status: "decayed",
+                            efficiency: 0.5
+                          };
+                        }
+                        return m;
+                      });
+                    });
+                    triggerNotification(
+                      "设备降频模拟触发",
+                      "已模拟首台运行设备进入降频状态。可在后台使用设备维护包恢复效率。",
+                      "warn"
+                    );
+                  }}
+                />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </div>
 
+        {/* Ambient footer */}
+        <footer className="border-t border-slate-900/60 bg-transparent mt-12 py-6 text-center text-[10px] text-slate-500 pb-2">
+          <p>© 2026 1人算力有限公司 · 本地设备部署并网 · 训练大模型产出 Token</p>
+          <p className="text-[9px] text-zinc-650 mt-1 max-w-xl mx-auto leading-relaxed">
+            Token 作为平台内算力服务额度，可用于生成 API Key、访问 URL、兑换服务或提交平台回收。
+          </p>
+        </footer>
       </main>
 
       {/* Modern, tactile Mobile Bottom Navigation Menu */}
@@ -580,16 +644,6 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
       />
-
-      {/* Cyberpunk ambient footer with literal human metrics */}
-      <footer className="border-t border-slate-900 bg-slate-950/70 py-6 md:py-8 text-center text-xs text-slate-500 pb-28 md:pb-8">
-        <div className="max-w-7xl mx-auto px-4 space-y-2">
-          <p>© 2026 算力有限公司 · 算力魔方智能共建挖矿网络生态 · 物理云托管</p>
-          <p className="text-[10px] text-zinc-600">
-            算力碎片仅作为系统自检积分代工凭证，本着零金融炒作、无资本吸纳的绿色合规积分兑换，服务广大分布式代工节点。
-          </p>
-        </div>
-      </footer>
 
       {/* Elegant global popup overlay modal */}
       <AnimatePresence>
@@ -624,10 +678,10 @@ export default function App() {
 
               {/* Emblem icon */}
               <div className="mx-auto mb-4 flex items-center justify-center w-12 h-12 rounded-full bg-slate-950 border border-slate-800 shadow-inner">
-                {modal.type === "success" && <CheckCircle2 className="size-6 text-emerald-400 stroke-[2.5]" />}
-                {modal.type === "warn" && <AlertTriangle className="size-6 text-amber-500 stroke-[2.5]" />}
-                {modal.type === "info" && <Info className="size-6 text-cyan-400 stroke-[2.5]" />}
-                {modal.type === "crystal" && <Zap className="size-6 text-yellow-400 stroke-[2.5] animate-pulse" />}
+                {modal.type === "success" && <CheckCircle2 stroke="url(#gradient-emerald-teal)" className="size-6 icon-glow-emerald stroke-[2.5]" />}
+                {modal.type === "warn" && <AlertTriangle stroke="url(#gradient-amber-orange)" className="size-6 icon-glow-amber stroke-[2.5]" />}
+                {modal.type === "info" && <Info stroke="url(#gradient-cyan-blue)" className="size-6 icon-glow-cyan stroke-[2.5]" />}
+                {modal.type === "crystal" && <Zap stroke="url(#gradient-amber-orange)" className="size-6 icon-glow-amber stroke-[2.5] animate-pulse" />}
               </div>
 
               <h3 className={`text-sm sm:text-base font-extrabold mb-2 tracking-tight ${
@@ -662,18 +716,20 @@ export default function App() {
 
 // Initial defaults to satisfy hydration compilation
 const INITIAL_STATS: UserStats = {
-  hashFragments: 42.50,
+  hashFragments: 32.54,
   hashCrystals: 0,
   level: UserLevel.ZERO,
-  baseHashpower: 10.0,
-  teamHashpower: 45.5,
+  baseHashpower: 50.0, // 50P startup license
+  teamHashpower: 0.0,
   totalSynthesized: 0,
-  accumulatedFragments: 42.50,
+  accumulatedFragments: 32.54,
   inviteCode: "CUBE888",
   referrerName: "星际创世神-波卡老詹",
   coolantCount: 1,
   buffActiveUntil: null,
-  hasClaimedDemo: false
+  hasClaimedDemo: false,
+  directReferrals: 0,
+  totalReferrals: 0
 };
 
 const INITIAL_TASKS: TaskState = {

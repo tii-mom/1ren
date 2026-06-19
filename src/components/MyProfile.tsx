@@ -2,22 +2,41 @@ import React, { useState } from "react";
 import { UserStats, ActiveMiner, MiningRecord, UserLevel } from "../types";
 import { MOCK_REFERRALS } from "../utils/storage";
 import { 
-  Award, Key, Copy, Check, Users, History, Cpu, Droplet, Sparkles, Plus, Layers, Lock, Settings, BatteryCharging, TrendingUp, Zap, Download, BarChart3
+  Award, Key, Copy, Check, Users, History, Cpu, Droplet, Sparkles, Plus, Layers, Lock, Settings, BatteryCharging, TrendingUp, Zap, Download, BarChart3,
+  Coins, RefreshCw, AlertTriangle, ShieldCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
-export const renderBadgeIcon = (badgeId: string, className = "size-8 text-cyan-400") => {
+export const renderBadgeIcon = (badgeId: string, className = "size-8", isActive = true) => {
+  const stroke = isActive ? (
+    badgeId === "active_miner" || badgeId === "crystal_master" 
+      ? "url(#gradient-amber-orange)" 
+      : badgeId === "veteran_node" 
+        ? "url(#gradient-cyan-blue)" 
+        : "url(#gradient-purple-pink)"
+  ) : "currentColor";
+
+  const glowClass = isActive ? (
+    badgeId === "active_miner" || badgeId === "crystal_master" 
+      ? "icon-glow-amber" 
+      : badgeId === "veteran_node" 
+        ? "icon-glow-cyan" 
+        : "icon-glow-purple"
+  ) : "";
+
+  const finalClass = `${className} ${glowClass}`;
+
   switch (badgeId) {
     case "active_miner":
-      return <Zap className={className} />;
+      return <Zap stroke={stroke} className={finalClass} />;
     case "crystal_master":
-      return <Sparkles className={className} />;
+      return <Sparkles stroke={stroke} className={finalClass} />;
     case "veteran_node":
-      return <Cpu className={className} />;
+      return <Cpu stroke={stroke} className={finalClass} />;
     case "global_ambassador":
-      return <Layers className={className} />;
+      return <Layers stroke={stroke} className={finalClass} />;
     default:
-      return <Award className={className} />;
+      return <Award stroke={stroke} className={finalClass} />;
   }
 };
 
@@ -29,6 +48,8 @@ interface MyProfileProps {
   onBuyCoolant: (costInFragments: number) => void;
   onApplyCoolant: (minerId: string) => void;
   onClaimDemoMiner: () => void;
+  onUpdateSimulatedStats?: (updater: (prev: UserStats) => UserStats) => void;
+  onForceAgeMiner?: () => void;
 }
 
 export const MyProfile: React.FC<MyProfileProps> = ({
@@ -37,7 +58,9 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   records,
   onBuyCoolant,
   onApplyCoolant,
-  onClaimDemoMiner
+  onClaimDemoMiner,
+  onUpdateSimulatedStats,
+  onForceAgeMiner
 }) => {
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [copiedRLink, setCopiedRLink] = useState(false);
@@ -68,7 +91,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
   // Simulating 30 days of daily log records details in CSV structure
   const getSimulated30DaysText = () => {
-    let text = "日期,事件类型,产出数值(HASH),代工负载机器,账簿保全签名\n";
+    let text = "日期,事件类型,Token产出,运行设备,记录签名\n";
     const nowTime = new Date();
     for (let i = 1; i <= 30; i++) {
       const d = new Date(nowTime.getTime() - i * 24 * 60 * 60 * 1000);
@@ -76,7 +99,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       const baseVal = (stats.baseHashpower * 12.96 + stats.teamHashpower * 4.32);
       const dayVal = parseFloat((baseVal * (1 + (Math.sin(i) * 0.15))).toFixed(4));
       const sigHash = Math.abs(Math.sin(i)).toString(16).substring(2, 10).toUpperCase();
-      text += `${dateStr},物理并网日结,${dayVal > 0 ? dayVal : 13.5},HASH-${1000 + i},SIG-0X${sigHash}\n`;
+      text += `${dateStr},设备在线日结,${dayVal > 0 ? dayVal : 13.5},DEVICE-${1000 + i},SIG-0X${sigHash}\n`;
     }
     return text;
   };
@@ -94,9 +117,9 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   const achievements = [
     {
       id: "active_miner",
-      title: "活跃分布式雇员 (Active AI Employee)",
-      desc: "交付并网，已获得首批核算碎片并开启了分布式计算代工征途。",
-      requirement: "系统检测到累计产出碎片数 > 0",
+      title: "活跃设备节点",
+      desc: "已有设备在线并产出首批 Token。",
+      requirement: "系统检测到累计产出Token利润数 > 0",
       isUnlocked: stats.accumulatedFragments > 0,
       icon: "⚡",
       color: "from-amber-400 to-orange-500 text-amber-400",
@@ -105,36 +128,36 @@ export const MyProfile: React.FC<MyProfileProps> = ({
     },
     {
       id: "crystal_master",
-      title: "晶体大师 (Crystal Master)",
-      desc: "成功将质能碎片高纯聚核，固化成功至少 1 块算力能量晶体。",
-      requirement: "系统检测到累计晶体固化总数 >= 1",
+      title: "API 凭证生成者",
+      desc: "已将 Token 转换成至少 1 组 API/URL 服务凭证。",
+      requirement: "系统检测到累计服务凭证数 >= 1",
       isUnlocked: stats.totalSynthesized >= 1 || stats.hashCrystals >= 1,
       icon: "💎",
       color: "from-cyan-400 to-blue-500 text-cyan-400",
       rarity: "A级重力徽章",
-      buffDescription: "固化重置晶体碎片熔融体时，自动返还免除 1.5% 能量尾尘损耗。"
+      buffDescription: "生成 API/URL 时展示更完整的交付记录。"
     },
     {
       id: "veteran_node",
-      title: "资深节点 (Veteran Node)",
-      desc: "深度连接主权节点，承载物理机房负载。已成功租用并托管至少 1 台专属微堆物理机组外包芯片契约限制。",
-      requirement: "系统正绑定并托管运行 ≥ 1 台矿机",
+      title: "资深并网节点 (Veteran Node)",
+      desc: "深度连接大模型算力骨干网，本地部署并网。已成功购入并部署并网至少 1 台专属大模型 GPU 算力集群。",
+      requirement: "系统正运行 >= 1 台并网设备",
       isUnlocked: activeMiners.length > 0,
       icon: "⚙️",
       color: "from-purple-400 to-indigo-500 text-purple-400",
       rarity: "S级奇点徽章",
-      buffDescription: "快速冷修复半衰期爆温硬件时，过冷对冲周期自动加赠延长 10%。"
+      buffDescription: "设备加注温控维护液时可恢复更高运行效率。"
     },
     {
       id: "global_ambassador",
-      title: "星网引力师 (Gravity Hub)",
-      desc: "成功组建下属共鸣公司，推广星网成员绑定，算力职级突破普通宿主个体限制。",
-      requirement: "系统职级达到 [S1 算力工作室创始人] 或以上",
+      title: "团队节点合伙人",
+      desc: "团队节点等级已突破 S0，自有设备之外开始获得团队算力加权。",
+      requirement: "团队等级达到 S1 或以上",
       isUnlocked: stats.level !== UserLevel.ZERO,
       icon: "🌌",
-      color: "from-pink-400 to-rose-500 text-pink-400",
-      rarity: "EX超阶黑洞勋章",
-      buffDescription: "捕获直属信道团队溢价能量中转对冲时，收益系数加权提升 2.5%。"
+      color: "from-cyan-400 to-blue-500 text-cyan-400",
+      rarity: "S级奇点勋章",
+      buffDescription: "团队节点加权会计入总算力。"
     }
   ];
 
@@ -185,9 +208,9 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   const getRecordTagName = (type: MiningRecord["type"]) => {
     switch(type) {
       case "mining": return "物理日结";
-      case "resonance": return "塔网共振";
-      case "synthesize": return "晶体合成";
-      case "coolant": return "注入液氮";
+      case "resonance": return "团队加权";
+      case "synthesize": return "凭证生成";
+      case "coolant": return "设备维护";
       case "exchange": return "商场兑换";
       case "buff": return "能效跃迁";
     }
@@ -203,8 +226,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
   const getMinerStatusName = (status: ActiveMiner["status"]) => {
     switch(status) {
-      case "running": return "正常代工中";
-      case "decayed": return "高热半衰竭";
+      case "running": return "正常运行";
+      case "decayed": return "降频待维护";
       case "stopped": return "契约满断电";
     }
   };
@@ -226,30 +249,24 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   const companyNetWorth = totalCapex + companyGrossProfit + crystalValuation;
   const dailyNetProfit = stats.baseHashpower * 0.18 + stats.teamHashpower * 0.06; // Estimated dynamic profit flow in USDT/day
 
-  // Get professional corporate badge metadata for S1-S9 hierarchy
+  // Get professional DePIN badge metadata for S1-S5 hierarchy
   const getCorporateBadgeMeta = (level: string) => {
-    switch (level) {
-      case "算力工作室创始人":
-        return { lvl: "S1", title: "工作室创始人", desc: "主脑代工主理人", color: "from-teal-400 to-cyan-500", glow: "shadow-[0_0_15px_rgba(20,184,166,0.4)]" };
-      case "算力部门经理":
-        return { lvl: "S2", title: "算力部门经理", desc: "信道代工主管", color: "from-blue-400 to-indigo-500", glow: "shadow-[0_0_15px_rgba(59,130,246,0.3)]" };
-      case "算力分公司总监":
-        return { lvl: "S3", title: "分公司总监", desc: "星网中轨主管", color: "from-indigo-400 to-violet-500", glow: "shadow-[0_0_15px_rgba(99,102,241,0.3)]" };
-      case "区域算力总裁":
-        return { lvl: "S4", title: "区域算力总裁", desc: "大中华区总调度", color: "from-pink-400 to-purple-500", glow: "shadow-[0_0_15px_rgba(236,72,153,0.3)]" };
-      case "算力集团副总裁":
-        return { lvl: "S5", title: "集团副总裁", desc: "技术对冲主理人", color: "from-purple-500 to-fuchsia-600", glow: "shadow-[0_0_15px_rgba(168,85,247,0.4)]" };
-      case "算力集团董事":
-        return { lvl: "S6", title: "集团董事会成员", desc: "大宗物理机群决策人", color: "from-rose-500 to-red-600", glow: "shadow-[0_0_15px_rgba(244,63,94,0.4)]" };
-      case "算力集团合伙人":
-        return { lvl: "S7", title: "集团高级合伙人", desc: "全球超算核电共营契约人", color: "from-red-500 via-amber-500 to-yellow-500", glow: "shadow-[0_0_20px_rgba(239,68,68,0.5)]" };
-      case "算力集团首席增长官":
-        return { lvl: "S8", title: "首席增长官 (CGO)", desc: "网络裂变增长引擎总帅", color: "from-yellow-400 via-emerald-400 to-cyan-400", glow: "shadow-[0_0_20px_rgba(234,179,8,0.5)]" };
-      case "算力集团联席CEO":
-        return { lvl: "S9", title: "联席首席执行官 (CEO)", desc: "星网上乘总司理/公司终极主理人", color: "from-amber-400 via-pink-500 via-purple-600 to-cyan-400", glow: "shadow-[0_0_25px_rgba(217,119,6,0.6)] animate-pulse" };
-      default:
-        return { lvl: "S0", title: "个体贡献者", desc: "基础测试员", color: "from-slate-400 to-slate-600", glow: "shadow-none" };
+    if (level.includes("S1")) {
+      return { lvl: "S1", title: "共建合伙节点", desc: "一级团队加权", color: "from-cyan-500 to-cyan-600", glow: "shadow-[0_0_15px_rgba(34,211,238,0.3)]" };
     }
+    if (level.includes("S2")) {
+      return { lvl: "S2", title: "团队合伙节点", desc: "二级团队加权", color: "from-cyan-400 to-cyan-500", glow: "shadow-[0_0_15px_rgba(34,211,238,0.4)]" };
+    }
+    if (level.includes("S3")) {
+      return { lvl: "S3", title: "区域合伙节点", desc: "三级团队加权", color: "from-cyan-300 to-cyan-400", glow: "shadow-[0_0_15px_rgba(34,211,238,0.5)]" };
+    }
+    if (level.includes("S4")) {
+      return { lvl: "S4", title: "城市合伙节点", desc: "区域服务分配权", color: "from-amber-500 to-amber-600", glow: "shadow-[0_0_15px_rgba(245,158,11,0.4)] text-glow-gold" };
+    }
+    if (level.includes("S5")) {
+      return { lvl: "S5", title: "全球理事节点", desc: "服务费分配候选", color: "from-amber-400 via-amber-500 to-cyan-400", glow: "shadow-[0_0_20px_rgba(245,158,11,0.6)] text-glow-gold" };
+    }
+    return { lvl: "S0", title: "自有设备节点", desc: "手机或电脑共享算力", color: "from-slate-400 to-slate-600", glow: "shadow-none" };
   };
 
   const badgeMeta = getCorporateBadgeMeta(stats.level);
@@ -267,17 +284,240 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 border-b border-white/10 pb-4">
         <div>
           <h2 className="text-xl font-black text-white flex items-center gap-2">
-            <Award className="size-6 text-[#22d3ee] animate-pulse" />
-            【创始人后台】 (Founder Backstage Suite)
+            <span className="cyber-icon-wrapper p-1.5 text-cyan-400 mr-1"><Award stroke="url(#gradient-cyan-blue)" className="size-5 icon-glow-cyan animate-pulse" /></span>
+            【我的后台】 (Account Console)
           </h2>
           <p className="text-xs text-slate-400 font-sans mt-0.5">
-            管理您专属算力有限公司的核心账目资产、高纯固质成长勋章，以及导出星链对账凭证。
+            管理账户资产、设备状态、API/URL 凭证、团队节点和平台回收申请。
           </p>
         </div>
       </div>
 
+      {/* Account settlement and developer simulation console */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Settlement card */}
+        <div className="bg-gradient-to-br from-[#0a0c1a] to-[#05060f] border border-cyan-500/20 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="cyber-icon-wrapper p-1.5 text-cyan-400 border-cyan-500/20">
+              <Coins stroke="url(#gradient-cyan-blue)" className="size-4 animate-pulse icon-glow-cyan" />
+            </span>
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#22d3ee]">
+              平台回收与账户结算
+            </h3>
+          </div>
+          <p className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
+            Token 可用于生成 API/URL，也可以在满足基础条件后提交平台回收申请。
+          </p>
+
+          <div className="space-y-3.5 mb-5">
+            {/* Condition 1: Token balance >= 500 */}
+            <div className="bg-black/35 border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[9px] text-slate-500 block font-mono uppercase tracking-wider font-bold">条件 1：可用 Token</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-mono font-black text-white">{stats.hashFragments.toFixed(1)}</span>
+                  <span className="text-[10px] text-slate-500">/ 500.0 Token</span>
+                </div>
+              </div>
+              {stats.hashFragments >= 500 ? (
+                <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
+                  <ShieldCheck className="size-3.5" /> 达标
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
+                  <AlertTriangle className="size-3.5 animate-bounce" /> 未达标
+                </div>
+              )}
+            </div>
+
+            {/* Condition 2: Active employees >= 1 */}
+            <div className="bg-black/35 border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-[9px] text-slate-500 block font-mono uppercase tracking-wider font-bold">条件 2：直属活跃节点</span>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-sm font-mono font-black text-white">{stats.directReferrals}</span>
+                  <span className="text-[10px] text-slate-500">/ 1 人</span>
+                </div>
+              </div>
+              {stats.directReferrals >= 1 ? (
+                <div className="flex items-center gap-1 bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
+                  <ShieldCheck className="size-3.5" /> 达标
+                </div>
+              ) : (
+                <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-extrabold px-2 py-0.5 rounded-lg">
+                  <AlertTriangle className="size-3.5 animate-bounce" /> 未招募
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Incubation Status Indicator */}
+          {stats.hashFragments >= 500 && stats.directReferrals >= 1 ? (
+            <div className="mb-4 bg-green-500/10 border border-green-500/20 text-green-400 text-xs px-4 py-3 rounded-2xl flex items-center gap-2.5">
+              <span className="w-2.5 h-2.5 rounded-full bg-green-400 animate-ping shrink-0" />
+              <span className="font-semibold">条件已满足，可以提交平台回收申请。模拟手续费为 1.5%。</span>
+            </div>
+          ) : (
+            <div className="mb-4 bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-2xl flex items-center gap-2.5">
+              <Lock className="size-4 shrink-0 text-red-400 animate-pulse" />
+              <span className="font-medium">暂未满足回收条件。请继续产出 Token 或激活直属节点。</span>
+            </div>
+          )}
+
+          {/* Cashout Trigger Button */}
+          <button
+            onClick={() => {
+              if (stats.hashFragments >= 500 && stats.directReferrals >= 1) {
+                alert(`回收申请已提交。申请数量 ${(stats.hashFragments).toFixed(1)} Token，模拟手续费 1.5%。`);
+                if (onUpdateSimulatedStats) {
+                  onUpdateSimulatedStats(prev => ({
+                    ...prev,
+                    hashFragments: 0
+                  }));
+                }
+              }
+            }}
+            disabled={!(stats.hashFragments >= 500 && stats.directReferrals >= 1)}
+            className={`w-full py-3.5 rounded-2xl text-xs font-black tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
+              stats.hashFragments >= 500 && stats.directReferrals >= 1
+                ? "bg-gradient-to-r from-emerald-400 to-cyan-500 hover:brightness-110 active:scale-95 text-slate-950 shadow-[0_4px_15px_rgba(52,211,153,0.3)] cursor-pointer"
+                : "bg-white/5 border border-white/5 text-slate-600 cursor-not-allowed"
+            }`}
+          >
+            {stats.hashFragments >= 500 && stats.directReferrals >= 1 ? "提交平台回收申请" : "回收通道未满足条件"}
+          </button>
+        </div>
+
+        {/* 开发者模拟调试面板 */}
+        <div className="bg-gradient-to-br from-[#07161b] to-[#030a0d] border border-cyan-500/20 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.02] rounded-full blur-2xl pointer-events-none" />
+          <div className="flex items-center gap-2.5 mb-3">
+            <span className="cyber-icon-wrapper p-1.5 text-cyan-400 border-cyan-500/20">
+              <Settings stroke="url(#gradient-cyan-blue)" className="size-4 icon-glow-cyan animate-spin" style={{ animationDuration: "8s" }} />
+            </span>
+            <h3 className="text-xs font-black uppercase tracking-widest text-[#22d3ee]">
+              开发者模拟控制台 (Developer Sim Console)
+            </h3>
+          </div>
+          <p className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
+            使用此控制台模拟 Token 增长、团队节点等级和设备降频，方便本地预览测试。
+          </p>
+
+          <div className="space-y-4">
+            {/* Action Group 1: Token simulation */}
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  if (onUpdateSimulatedStats) {
+                    onUpdateSimulatedStats(prev => ({
+                      ...prev,
+                      hashFragments: prev.hashFragments + 100,
+                      accumulatedFragments: prev.accumulatedFragments + 100
+                    }));
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[#22d3ee] hover:bg-cyan-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+              >
+                <Plus className="size-3.5" /> 利润 +100 Token
+              </button>
+
+              <button
+                onClick={() => {
+                  if (onUpdateSimulatedStats) {
+                    onUpdateSimulatedStats(prev => ({
+                      ...prev,
+                      hashFragments: prev.hashFragments + 500,
+                      accumulatedFragments: prev.accumulatedFragments + 500
+                    }));
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-[#22d3ee] hover:bg-cyan-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+              >
+                <Plus className="size-3.5" /> 利润 +500 Token
+              </button>
+            </div>
+
+            {/* Action Group 2: Referral / Team simulation */}
+            <div className="space-y-1.5">
+              <span className="text-[9px] text-slate-500 font-mono block uppercase tracking-wider font-bold">模拟团队节点数量（测试 S1-S5）：</span>
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                {[
+                  { label: "0人 (S0节点)", direct: 0, total: 0 },
+                  { label: "1人 (S1合伙)", direct: 1, total: 1 },
+                  { label: "3人 (S2合伙)", direct: 3, total: 3 },
+                  { label: "5人 (S3代理)", direct: 5, total: 5 },
+                  { label: "15人 (S4合伙)", direct: 5, total: 15 },
+                  { label: "50人 (S5理事)", direct: 5, total: 50 },
+                ].map((item, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      if (onUpdateSimulatedStats) {
+                        onUpdateSimulatedStats(prev => ({
+                          ...prev,
+                          directReferrals: item.direct,
+                          totalReferrals: item.total
+                        }));
+                      }
+                    }}
+                    className={`px-2 py-1.5 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer text-center active:scale-95 truncate ${
+                      stats.totalReferrals === item.total && stats.directReferrals === item.direct
+                        ? "bg-cyan-500 border-cyan-400 text-slate-950 font-black shadow-[0_0_10px_rgba(34,211,238,0.4)]"
+                        : "bg-black/35 border-cyan-500/20 text-[#22d3ee]/80 hover:border-cyan-500/50"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Group 3: Device aging / Reset simulation */}
+            <div className="flex gap-2.5 pt-1 border-t border-cyan-500/10">
+              <button
+                disabled={!activeMiners.some(m => !m.isDemo && m.status === "running")}
+                onClick={() => {
+                  if (onForceAgeMiner) {
+                    onForceAgeMiner();
+                  }
+                }}
+                className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1 ${
+                  activeMiners.some(m => !m.isDemo && m.status === "running")
+                    ? "bg-amber-500/20 border border-amber-500/40 text-amber-400 hover:bg-amber-500 hover:text-slate-950 cursor-pointer active:scale-95"
+                    : "bg-white/5 border border-white/5 text-slate-600 cursor-not-allowed"
+                }`}
+                title={activeMiners.some(m => !m.isDemo && m.status === "running") ? "使首台运行中的付费设备降频到50%效率" : "没有运行中的付费设备"}
+              >
+                <AlertTriangle className="size-3.5 animate-pulse" /> 强制设备降频
+              </button>
+
+              <button
+                onClick={() => {
+                  if (onUpdateSimulatedStats) {
+                    onUpdateSimulatedStats(prev => ({
+                      ...prev,
+                      hashFragments: 0,
+                      accumulatedFragments: 0,
+                      directReferrals: 0,
+                      totalReferrals: 0,
+                      coolantCount: 3,
+                      hashCrystals: 0,
+                      totalSynthesized: 0
+                    }));
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-1"
+              >
+                <RefreshCw className="size-3.5" /> 重置模拟状态
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 📊 公司利润总表 (Company Financial Statement Summary Card) */}
-      <div className="bg-gradient-to-r from-[#0d1024] to-[#080916] border border-cyan-500/10 rounded-3xl p-6 relative overflow-hidden backdrop-blur-md">
+      <div className="bg-gradient-to-r from-[#0d1024] to-[#080916] border border-cyan-500/10 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
         <div className="absolute top-0 right-0 w-32 h-32 bg-cyan-500/[0.04] rounded-full blur-2xl flex pointer-events-none" />
         
         <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center border-b border-white/5 pb-5">
@@ -289,7 +529,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               </h3>
             </div>
             <p className="text-[11px] text-slate-400 font-medium">
-              本账表严格统计物理发运资本支出（CAPEX）、爆块积分总兑及晶化硬通资产。精确核算创始人名下公司的核心资产价值。
+              统计设备购买成本、累计 Token 产出、平台回收估值和 API/URL 凭证数量。
             </p>
           </div>
           
@@ -317,15 +557,15 @@ export const MyProfile: React.FC<MyProfileProps> = ({
             <span className="text-[9.5px] uppercase text-slate-500 font-bold block">硬件基础投资 (CAPEX)</span>
             <div className="text-cyan-300 font-mono font-black text-lg">${totalCapex.toFixed(2)}</div>
             <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-              指在【AI引擎机房】所租借/签约部署的物理发运硬件折算金额。
+              指在【算力设备】所购买部署并网的大模型高性能 GPU 硬件折算金额。
             </p>
           </div>
 
           <div className="bg-black/30 border border-white/5 rounded-xl p-4.5 space-y-1 relative group hover:border-emerald-500/10 transition-all">
-            <span className="text-[9.5px] uppercase text-slate-500 font-bold block">累计爆块毛收益</span>
-            <div className="text-emerald-400 font-mono font-black text-lg">{stats.accumulatedFragments.toFixed(1)} 碎片</div>
+            <span className="text-[9.5px] uppercase text-slate-500 font-bold block">累计 Token 产出</span>
+            <div className="text-emerald-400 font-mono font-black text-lg">{stats.accumulatedFragments.toFixed(1)} Token</div>
             <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-              本账户自公网自检至今日所产生的总代工报酬，无缺扣核销。
+              账户从自有设备、并网设备和团队节点累计获得的 Token。
             </p>
           </div>
 
@@ -338,10 +578,10 @@ export const MyProfile: React.FC<MyProfileProps> = ({
           </div>
 
           <div className="bg-black/30 border border-white/5 rounded-xl p-4.5 space-y-1 relative group hover:border-violet-500/10 transition-all">
-            <span className="text-[9.5px] uppercase text-slate-500 font-bold block">固化晶体资产评估</span>
+            <span className="text-[9.5px] uppercase text-slate-500 font-bold block">API/URL 凭证估值</span>
             <div className="text-purple-400 font-mono font-black text-lg">${crystalValuation.toFixed(2)} USDT</div>
             <p className="text-[10px] text-slate-500 font-sans leading-relaxed">
-              持装 {stats.hashCrystals} 颗高级算能固态晶体。晶体支持极速二级回放。
+              当前持有 {stats.hashCrystals} 组服务凭证，可用于自用、出售或回收流程。
             </p>
           </div>
 
@@ -349,8 +589,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
       </div>
 
-      {/* 🖥️ 矿池资产负载及空闲插槽概览 (Mining Pool Slot Occupancy & Load Overview Card) */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
+      {/* Equipment slot overview */}
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-cyan-500/20 transition-all duration-300">
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/[0.02] to-violet-500/[0.02] opacity-50 pointer-events-none" />
         <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
           
@@ -396,10 +636,10 @@ export const MyProfile: React.FC<MyProfileProps> = ({
             <div className="space-y-1">
               <span className="text-[9px] text-cyan-400 font-mono font-extrabold tracking-widest block uppercase">MINING POOL ASSET LOAD & SLOT STATUS</span>
               <h4 className="text-sm font-extrabold text-white">
-                矿池资产负荷概览 ── 物理插槽负载栏
+                设备资产负载概览
               </h4>
               <p className="text-xs text-slate-400 max-w-xl">
-                中枢量子对冲机房独设了固定 <b>{maxSlots}</b> 个专用托管代工物理插槽。未装载槽随时待命，追加更多货机或高阶设备可直接释放网络算力能级的带宽。
+                当前账户最多显示 <b>{maxSlots}</b> 个本地部署并网槽位。添加更多设备会直接提升基础算力。
               </p>
             </div>
           </div>
@@ -435,7 +675,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* User Card */}
-        <div className="lg:col-span-4 bg-white/5 border border-white/10 rounded-3xl p-6 flex flex-col justify-between backdrop-blur-md relative overflow-hidden">
+        <div className="lg:col-span-4 bg-white/5 border border-white/10 rounded-2xl p-6 flex flex-col justify-between backdrop-blur-md relative overflow-hidden">
           <div className="absolute top-0 right-0 bg-cyan-500/5 w-24 h-24 rounded-full blur-xl pointer-events-none" />
           
           <div className="space-y-4">
@@ -452,7 +692,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                   yudeyou0118@gmail.com
                 </h3>
                 
-                {/* 🎖️ Custom animated enterprise badge system S1-S9 */}
+                {/* Custom animated network badge system S0-S5 */}
                 <div className="mt-1.5 flex flex-col gap-1">
                   <div className={`inline-flex items-center gap-1.5 bg-gradient-to-r ${badgeMeta.color} ${badgeMeta.glow} text-slate-950 font-black text-[10px] px-3.5 py-1 rounded-xl transition-all border border-white/10 uppercase`}>
                     <Award className="size-3.5" />
@@ -475,15 +715,15 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
           <div className="mt-6 pt-5 border-t border-white/5 space-y-3.5">
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400 font-medium">主频物理代工算力</span>
+              <span className="text-slate-400 font-medium">自有/并网设备算力</span>
               <span className="font-mono font-extrabold text-white">{stats.baseHashpower.toFixed(1)} T/s</span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400 font-medium">声网拓扑共振算力</span>
+              <span className="text-slate-400 font-medium">团队节点加权算力</span>
               <span className="font-mono font-extrabold text-cyan-400 text-glow-cyan">{stats.teamHashpower.toFixed(1)} T/s</span>
             </div>
             <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-400 font-medium">累记固化能量晶体</span>
+              <span className="text-slate-400 font-medium">API/URL 凭证</span>
               <span className="font-mono font-extrabold text-yellow-400 text-glow-gold flex items-center gap-1">
                 <Sparkles className="size-3.5 text-yellow-400 animate-pulse" />
                 {stats.hashCrystals} 块
@@ -494,16 +734,16 @@ export const MyProfile: React.FC<MyProfileProps> = ({
         </div>
 
         {/* Invite Generator Panel */}
-        <div className="lg:col-span-5 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-5 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/[0.02] rounded-full blur-2xl pointer-events-none" />
           
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-2">
               <Users className="size-4 text-cyan-400" />
-              双向绑定 ── 联邦管道密钥
+              邀请节点
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans font-medium">
-              交付您的引力坐标。好友装配新节点时绑定该序列，直接激发下属双向谐振引擎，各享20%的基础算能定向中继投递。
+              分享邀请码或邀请链接。对方接入设备后，会计入您的直属节点和团队节点加权。
             </p>
           </div>
 
@@ -545,16 +785,16 @@ export const MyProfile: React.FC<MyProfileProps> = ({
         </div>
 
         {/* Quick Fluid Alchemy Panel */}
-        <div className="lg:col-span-3 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md flex flex-col justify-between relative overflow-hidden">
+        <div className="lg:col-span-3 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md flex flex-col justify-between relative overflow-hidden">
           <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.02] rounded-full blur-2xl pointer-events-none" />
           
           <div>
             <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-2 flex items-center gap-1.5">
               <Droplet className="size-4 text-cyan-400 animate-bounce" />
-              液冷抗暴缓冲站
+              GPU 集群温控维护液
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed font-sans font-medium">
-              长期全天候爆算矿圈芯片极易进入物理高热。请储备足额液氮快速冷却排铅。
+              本地并网设备持续满载运行后容易因过热而发生保护性降频。使用温控维护液能有效冷却硬件并解除限频。
             </p>
           </div>
 
@@ -577,12 +817,12 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               }`}
             >
               <Plus className="size-3.5" />
-              50碎片/罐
+              50 Token/罐
             </button>
           </div>
 
           <p className="text-[10px] text-zinc-500 leading-normal mt-3 font-medium font-sans">
-            提示：维护重构半衰退硬件能效。可在下方运转列表中调配执行。
+            提示：当 GPU 设备过热进入保护性降频状态时，可在下方设备列表中使用维护液恢复。
           </p>
         </div>
 
@@ -590,16 +830,16 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
       {/* Trial Claim Box */}
       {!stats.hasClaimedDemo && (
-        <div className="bg-gradient-to-r from-cyan-500/10 via-indigo-500/5 to-transparent border border-cyan-500/30 rounded-3xl p-6 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
+        <div className="bg-gradient-to-r from-cyan-500/10 via-indigo-500/5 to-transparent border border-cyan-500/30 rounded-2xl p-6 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-48 h-48 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
           
           <div className="space-y-1">
             <span className="inline-block bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-widest mb-1.5">
-              新手空投契约 // FREE DEPLOYMENT
+              自有设备体验 // FREE DEVICE NODE
             </span>
-            <h3 className="text-sm font-bold text-white">首发免费领取 7天物理体验云端设备</h3>
+            <h3 className="text-sm font-bold text-white">免费激活 7 天手机共享算力体验</h3>
             <p className="text-xs text-slate-400 mt-1 font-medium font-sans max-w-2xl leading-relaxed">
-              系统特派发一台自检专用的“初学者云代工微堆”芯片。无任何抵押阻碍，即刻上线即可触发10.0 T/s的基础爆裂代工哈希流能。
+              不购买设备也可以体验。系统会为您的自有设备创建体验节点，用于产出少量 Token。
             </p>
           </div>
           <button
@@ -614,7 +854,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       )}
 
       {/* 🏆 Achievements System panel (成就系统) */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-violet-500/20 transition-all duration-300">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md relative overflow-hidden group hover:border-violet-500/20 transition-all duration-300">
         <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/5 pb-4 mb-6">
@@ -625,7 +865,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               节点成长成就徽章系统 (Node Milestones & Badges)
             </h3>
             <p className="text-xs text-slate-400 font-sans">
-              根据您的公能历史作业打卡、固体晶体高纯固化数、以及分布式机房专属托管天数深度熔铸。点击点亮徽标可开启或查看特权增益详情。
+              根据设备在线、Token 产出、API/URL 凭证和团队等级解锁。点击徽章可查看说明。
             </p>
           </div>
         </div>
@@ -647,8 +887,10 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                   {badge.rarity}
                 </div>
 
-                <div className={`my-2.5 transition-transform duration-300 group-hover/badge:scale-115 ${badge.isUnlocked ? "drop-shadow-[0_2px_12px_rgba(34,211,238,0.4)]" : "opacity-35"}`}>
-                  {renderBadgeIcon(badge.id, badge.isUnlocked ? "size-10 text-cyan-400" : "size-10 text-slate-500")}
+                <div className={`cyber-icon-wrapper p-3.5 my-2 transition-all duration-300 group-hover/badge:scale-105 ${
+                  badge.isUnlocked ? "border-cyan-500/25 bg-[#090b14]/50 shadow-[0_0_15px_rgba(34,211,238,0.08)]" : "border-white/5 bg-transparent opacity-35"
+                }`}>
+                  {renderBadgeIcon(badge.id, "size-8", badge.isUnlocked)}
                 </div>
 
                 <div className="space-y-1.5 w-full">
@@ -673,11 +915,11 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Owned Miners hardware details */}
-        <div className="lg:col-span-7 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md space-y-4">
+        <div className="lg:col-span-7 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md space-y-4">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
               <Cpu className="text-cyan-400 size-4" />
-              已托管租赁运转设备 ({(activeMiners.length)})
+              已本地部署并网设备 ({(activeMiners.length)})
             </h3>
             <span className="text-[10px] text-slate-500 font-mono font-bold tracking-wider uppercase">
               REAL-TIME MONITORING
@@ -687,8 +929,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
           {activeMiners.length === 0 ? (
             <div className="text-center py-12 rounded-2xl bg-black/40 border border-white/5 space-y-3 font-sans">
               <Cpu className="size-10 text-slate-600 mx-auto animate-pulse" />
-              <p className="text-xs font-bold text-slate-400">目前暂未绑定云端实地机组节点</p>
-              <p className="text-[10px] text-slate-500 font-medium">请于“设备租赁 / 资产”大厅租置物理算效引擎，或激活上方特批新手云代工起步。</p>
+              <p className="text-xs font-bold text-slate-400">目前暂未绑定本地部署并网节点</p>
+              <p className="text-[10px] text-slate-500 font-medium">可以先激活手机共享节点，也可以去并网中心购买部署并网设备。</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -716,12 +958,12 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                           </div>
                           
                           <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1 text-[10px] text-slate-400 font-mono">
-                            <span>托管规格：<b className="text-white">{miner.cost} USDT</b></span>
-                            <span>代工能效：<b className="text-cyan-400 font-bold">{(miner.efficiency * 100).toFixed(0)}%</b></span>
+                            <span>部署并网规格：<b className="text-white">{miner.cost} USDT</b></span>
+                            <span>运行效率：<b className="text-cyan-400 font-bold">{(miner.efficiency * 100).toFixed(0)}%</b></span>
                             {isDemo ? (
-                              <span className="text-indigo-400 font-bold">效期：首礼7日免契</span>
+                              <span className="text-indigo-400 font-bold">效期：7 天免费试用体验</span>
                             ) : (
-                              <span>熔断交割：<b className="text-slate-300">{formatDate(miner.expiresAt)}</b></span>
+                              <span>并网截止时间：<b className="text-slate-300">{formatDate(miner.expiresAt)}</b></span>
                             )}
                           </div>
                         </div>
@@ -733,7 +975,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                     <div className="bg-black/40 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 border border-white/5">
                       <div className="w-full text-xs">
                         <div className="flex items-center justify-between text-[11px] mb-1 font-sans">
-                          <span className="text-slate-400 font-medium">芯片微孔高热衰减度（低于50%触发安全熔降）</span>
+                          <span className="text-slate-400 font-medium">GPU 核心核心温度与温控健康度（低于50%触发安全保护性降频）</span>
                           <span className="font-mono text-cyan-400 font-bold">{(miner.efficiency * 100).toFixed(0)}% / 100%</span>
                         </div>
                         <div className="w-full bg-black/40 h-2 rounded-full overflow-hidden border border-white/5">
@@ -758,7 +1000,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                           className="w-full sm:w-auto shrink-0 bg-gradient-to-r from-cyan-400 to-indigo-600 hover:brightness-115 text-slate-950 font-extrabold px-4 py-2 rounded-xl text-[11px] flex items-center justify-center gap-1 cursor-pointer active:scale-95 transition-all shadow-[0_2px_10px_rgba(6,182,212,0.3)] font-sans"
                         >
                           <Droplet className="size-3.5 fill-slate-950" />
-                          加注液氮
+                          加注温控维护液
                         </button>
                       )}
                     </div>
@@ -766,7 +1008,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                     {/* Tiny tip */}
                     {miner.status === "decayed" && (
                       <p className="text-[10px] font-sans text-amber-400 bg-amber-505/5 border border-amber-500/15 p-2.5 rounded-xl font-medium leading-relaxed">
-                        ⚠️ 芯片局部结温过高导致算力触发50%安全熔降！立即加注液氮可完璧提速，并在契约期内享加赠 <b>+10% 算力爆发能效</b> 作为安全补偿！
+                        设备核心已过热降频至 50%。加注温控维护液可重置温度状态，并获得超频运行效率加成，提升至 <b>110%</b>。
                       </p>
                     )}
 
@@ -778,16 +1020,16 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
           {/* Slogans on the safety rules */}
           <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-1 font-sans">
-            <span className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-wide">智能液冷自检协定</span>
+            <span className="text-[10px] text-cyan-400 font-extrabold uppercase tracking-wide">智能液冷与温控自检协定</span>
             <p className="text-[10px] leading-relaxed text-slate-400 font-medium">
-              算力魔方分布式云代工机床支持24小时自动化故障巡航。热流过高时物理系统自动降低半衰运行效率。使用“冷却液”极速减温，能立刻还原满血状态并重置高热芯片寿命。
+              所有并网运行的 GPU 设备均受到智能温控监测。若设备超频过载导致过热降频，请及时加注温控维护液进行冷却修复。
             </p>
           </div>
 
         </div>
 
         {/* Mining logs display */}
-        <div className="lg:col-span-5 bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md space-y-4">
+        <div className="lg:col-span-5 bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-white/5 pb-3 gap-2">
             <h3 className="text-xs font-semibold text-white uppercase tracking-widest flex items-center gap-2">
               <History className="text-cyan-400 size-4" />
@@ -847,7 +1089,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       </div>
 
       {/* Direct Referrals Team List Tree Node - displaying bottom relationships */}
-      <div className="bg-white/5 border border-white/10 rounded-3xl p-6 backdrop-blur-md">
+      <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-md">
         <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-4">
           <h3 className="text-xs font-bold text-white uppercase tracking-widest flex items-center gap-2">
             <Users className="text-cyan-400 size-4" />
@@ -893,10 +1135,10 @@ export const MyProfile: React.FC<MyProfileProps> = ({
         </div>
 
         <div className="mt-4 pt-3.5 border-t border-white/5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-[10px] text-slate-500 font-sans font-medium">
-          <span>* 以上直属节点所产哈希速率按20%双向溢价权重，直接累加至您的声网共振塔结算网络内，绝不缺扣。</span>
+          <span>* 以上直属节点按团队等级规则计入算力加权，实际比例以团队节点页为准。</span>
           <span className="font-extrabold text-cyan-400 uppercase tracking-widest flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            公理共识网受控
+            团队节点记录
           </span>
         </div>
       </div>
@@ -916,14 +1158,14 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", stiffness: 350, damping: 28 }}
-              className="bg-[#0b0c16] border border-white/10 rounded-3xl max-w-2xl w-full p-4 sm:p-6 space-y-4 relative shadow-[0_10px_50px_rgba(34,211,238,0.15)] max-h-[85vh] overflow-y-auto flex flex-col font-sans"
+              className="bg-[#0b0c16] border border-white/10 rounded-2xl max-w-2xl w-full p-4 sm:p-6 space-y-4 relative shadow-[0_10px_50px_rgba(34,211,238,0.15)] max-h-[85vh] overflow-y-auto flex flex-col font-sans"
             >
               <div className="flex items-center justify-between border-b border-white/5 pb-3 pr-8">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="text-cyan-400 size-5" />
                   <div>
                     <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
-                      算力魔方智能账本 ── 30日历史明细导出
+                      30 日 Token 产出明细导出
                     </h3>
                     <span className="text-[9px] text-cyan-400 font-mono tracking-widest block font-bold">BLOCKCHAIN HISTORICAL REPORT EXPORT</span>
                   </div>
@@ -938,11 +1180,11 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               </button>
 
               <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed font-sans font-medium">
-                系统从您绑定的分布式代工集群商册中，分析并抓取了截止至今日的<b>最近30天AI智能引擎分配及团队裂变日结哈希碎片产出</b>。符合星网公理对冲链下历史保全协议。
+	                系统会导出最近 30 天的设备产出、团队节点加权、维护记录和 API/URL 凭证生成记录。
               </p>
 
               {exportPhase !== "ready" ? (
-                <div className="bg-black/45 border border-white/5 rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-6 h-80 animate-fade-in select-none">
+                <div className="bg-black/45 border border-white/5 rounded-2xl p-6 sm:p-8 flex flex-col items-center justify-center text-center space-y-6 h-80 animate-fade-in select-none">
                   <div className="relative w-16 h-16 flex items-center justify-center">
                     <div className="absolute inset-0 rounded-full border-2 border-cyan-500/10 border-t-cyan-400 animate-spin" />
                     <Cpu className="size-8 text-cyan-400 animate-pulse animate-duration-1000" />
@@ -957,7 +1199,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                     
                     <h4 className="text-[11px] sm:text-xs font-bold text-white tracking-wide">
                       {exportPhase === "pairing" && "环境签名密钥拉取..."}
-                      {exportPhase === "checking" && "遍历代工明细数据项..."}
+                      {exportPhase === "checking" && "遍历设备和团队明细..."}
                       {exportPhase === "broadcasting" && "中继基站广播备份..."}
                       {exportPhase === "solidifying" && "数字摘要计算对账..."}
                     </h4>
@@ -1066,7 +1308,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", stiffness: 350, damping: 28 }}
-              className="bg-[#0b0c16] border border-white/10 rounded-3xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 space-y-4 sm:space-y-5 relative shadow-[0_15px_60px_rgba(139,92,246,0.15)] flex flex-col font-sans"
+              className="bg-[#0b0c16] border border-white/10 rounded-2xl max-w-sm sm:max-w-md w-full p-4 sm:p-6 space-y-4 sm:space-y-5 relative shadow-[0_15px_60px_rgba(139,92,246,0.15)] flex flex-col font-sans"
             >
               <button 
                 onClick={() => setSelectedBadge(null)}
@@ -1076,8 +1318,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               </button>
 
               <div className="text-center pt-3">
-                <div className="inline-flex mb-4 bg-white/[0.03] border border-white/10 p-5 rounded-3xl shadow-inner select-none animate-bounce justify-center items-center">
-                  {renderBadgeIcon(selectedBadge.id, "size-12 text-cyan-400")}
+                <div className="cyber-icon-wrapper p-6 mb-4 bg-black/45 border-cyan-500/25 select-none animate-bounce justify-center items-center">
+                  {renderBadgeIcon(selectedBadge.id, "size-12", selectedBadge.isUnlocked)}
                 </div>
                 <span className="text-[10px] text-violet-400 font-mono font-extrabold tracking-widest block uppercase">
                   {selectedBadge.rarity}

@@ -1,5 +1,5 @@
 import React from "react";
-import { LayoutDashboard, Orbit, Cpu, Landmark, User } from "lucide-react";
+import { LayoutDashboard, Network, Cpu, KeyRound, User } from "lucide-react";
 
 interface BottomNavigationProps {
   currentTab: string;
@@ -41,22 +41,62 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
 
   const handleTabClick = (tabId: string) => {
     playTactileClick();
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
     setCurrentTab(tabId);
     
-    // Smooth scroll page to top when changing views
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    // Smooth scroll scrollable main container to top when changing views
+    const mainEl = document.querySelector("main");
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const navItems = [
     { id: "home", label: "总览", icon: LayoutDashboard },
-    { id: "tower", label: "雇员", icon: Orbit },
+    { id: "tower", label: "团队", icon: Network },
     { id: "store", label: "机房", icon: Cpu },
-    { id: "items", label: "物资", icon: Landmark },
+    { id: "items", label: "服务", icon: KeyRound },
     { id: "my", label: "后台", icon: User },
   ];
 
+  const getTabStroke = (tabId: string, active: boolean) => {
+    if (!active) return "currentColor";
+    switch (tabId) {
+      case "home":
+      case "store":
+      case "my":
+        return "url(#gradient-cyan-blue)";
+      case "tower":
+        return "url(#gradient-purple-pink)";
+      case "items":
+        return "url(#gradient-emerald-teal)";
+      default:
+        return "url(#gradient-cyan-blue)";
+    }
+  };
+
+  const getTabGlowClass = (tabId: string, active: boolean) => {
+    if (!active) return "";
+    switch (tabId) {
+      case "home":
+      case "store":
+      case "my":
+        return "icon-glow-cyan";
+      case "tower":
+        return "icon-glow-purple";
+      case "items":
+        return "icon-glow-emerald";
+      default:
+        return "icon-glow-cyan";
+    }
+  };
+
   return (
-    <div className="md:hidden fixed bottom-1.5 left-2 right-2 z-50 bg-[#090b11]/90 border border-white/10 backdrop-blur-xl rounded-2xl shadow-[0_-5px_30px_rgba(0,0,0,0.8),inset_0_1px_1px_rgba(255,255,255,0.05)] px-4 py-2">
+    <div className="md:hidden fixed bottom-[calc(8px+env(safe-area-inset-bottom))] left-3 right-3 z-50 bg-[#090b11]/95 border border-white/10 backdrop-blur-2xl rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.05)] px-4 py-1.5 sm:py-2">
       <nav className="flex justify-around items-center" id="mobile-navigation-bar">
         {navItems.map((item) => {
           const isActive = currentTab === item.id;
@@ -77,12 +117,13 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
               <div
                 className={`transition-all duration-300 ${
                   isActive
-                    ? "text-[#22d3ee] scale-110 filter drop-shadow-[0_0_3px_rgba(34,211,238,0.4)]"
+                    ? "scale-110"
                     : "text-slate-400 group-hover:text-slate-200"
                 }`}
               >
                 <IconComponent 
-                  className={`size-5 ${item.id === "tower" && isActive ? "animate-spin" : ""}`} 
+                  stroke={getTabStroke(item.id, isActive)}
+                  className={`size-5 ${getTabGlowClass(item.id, isActive)} ${item.id === "tower" && isActive ? "animate-spin" : ""}`} 
                   style={item.id === "tower" && isActive ? { animationDuration: "12s" } : undefined}
                 />
               </div>

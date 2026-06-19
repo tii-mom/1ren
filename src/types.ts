@@ -1,14 +1,10 @@
 export enum UserLevel {
-  ZERO = "个体算力贡献者",
-  S1 = "算力工作室创始人",
-  S2 = "算力部门经理",
-  S3 = "算力分公司总监",
-  S4 = "区域算力总裁",
-  S5 = "算力集团副总裁",
-  S6 = "算力集团董事",
-  S7 = "算力集团合伙人",
-  S8 = "算力集团首席增长官",
-  S9 = "算力集团联席CEO"
+  ZERO = "S0 自有设备节点",
+  S1 = "S1 共建合伙节点",
+  S2 = "S2 团队合伙节点",
+  S3 = "S3 区域合伙节点",
+  S4 = "S4 城市合伙节点",
+  S5 = "S5 全球理事节点"
 }
 
 export interface TaskState {
@@ -47,7 +43,7 @@ export interface Referral {
   level: UserLevel;
   totalHashpower: number;
   joinedAt: string;
-  depth: number; // level 1-9 in team referral network
+  depth: number; // level 1-5 in team node network
 }
 
 export interface UserStats {
@@ -63,6 +59,8 @@ export interface UserStats {
   coolantCount: number; // 冷却液 quantity
   buffActiveUntil: string | null; // ISO String for 1hr 2x buff
   hasClaimedDemo: boolean; // Has claimed the 7-day free demo miner
+  directReferrals: number; // 直属活跃节点数
+  totalReferrals: number;  // 团队级联节点数
 }
 
 export interface MinerTemplate {
