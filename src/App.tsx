@@ -765,6 +765,7 @@ export default function App() {
                   stats={stats}
                   tasks={tasks}
                   activeMiners={activeMiners}
+                  records={records}
                   onCompleteTask={handleCompleteTask}
                   onTriggerBuff={handleTriggerBuff}
                   onSynthesize={handleSynthesize}
