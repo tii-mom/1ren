@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { UserStats, UserLevel, ActiveMiner, TaskState, MiningRecord, StoreItem, MinerTemplate } from "./types";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { UserStats, UserLevel, ActiveMiner, TaskState, MiningRecord, StoreItem, MinerTemplate, UserIssuedToken } from "./types";
 import { 
   loadStats, saveStats, loadMiners, saveMiners, loadTasks, saveTasks, loadRecords, saveRecords, addRecord, MOCK_STORE_ITEMS, MOCK_REFERRALS
 } from "./utils/storage";
@@ -26,7 +26,10 @@ export default function App() {
 
   // R1 Market price and exchange states
   const [r1Price, setR1Price] = useState<number>(0.05);
-  const [r1PriceChange, setR1PriceChange] = useState<number>(5.42); // 24h change pct
+  const dayOpenPrice = 0.0475;
+  const r1PriceChange = useMemo(() => {
+    return parseFloat((((r1Price - dayOpenPrice) / dayOpenPrice) * 100).toFixed(2));
+  }, [r1Price]);
   const [r1PriceDir, setR1PriceDir] = useState<"up" | "down" | "flat">("flat");
 
   // Ticking price simulator
@@ -50,6 +53,10 @@ export default function App() {
 
   // Shared unified transaction handler for R1/USDT spot exchange
   const handleExchangeTrade = (type: "buy" | "sell", amount: number, price: number): boolean => {
+    if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(price) || price <= 0) {
+      triggerNotification("交易失败", "输入的交易数量或报价无效。", "warn");
+      return false;
+    }
     const feePct = 0.003; // 0.3% commission fee
     
     if (type === "buy") {
@@ -636,11 +643,20 @@ export default function App() {
     triggerNotification("开发测试条件已满足", "已将等级设为 S1，累计产出设为 500 R1，余额设为 150 R1，并激活算力设备。", "success");
   };
 
-  const handleLaunchToken = (tokenData: any) => {
-    setStats((prev) => ({
-      ...prev,
-      hashFragments: Math.max(0, prev.hashFragments - 100)
-    }));
+  const handleLaunchToken = (tokenData: UserIssuedToken): boolean => {
+    const latestStats = statsRef.current;
+    if (latestStats.hashFragments < 100) {
+      triggerNotification("R1 押金不足", "可锁定质押押金不足 100 R1，无法发行影子 Token。", "warn");
+      return false;
+    }
+
+    setStats((prev) => {
+      if (prev.hashFragments < 100) return prev;
+      return {
+        ...prev,
+        hashFragments: prev.hashFragments - 100
+      };
+    });
 
     addRecordLog("exchange", 100, `[发行中心] 质押锁仓 100 R1 成功发行影子 Token [${tokenData.symbol}]`);
 
@@ -658,9 +674,10 @@ export default function App() {
 
     triggerNotification(
       "企业 Token 发行成功",
-      `已质押锁仓 100 R1 押金。影子 Token [${tokenData.symbol}] 智能合约部署成功，进入模拟支持池。`,
+      `已质押锁仓 100 R1 押金。影子 Token [${tokenData.symbol}] 模拟合约影子部署成功，进入模拟支持池。`,
       "success"
     );
+    return true;
   };
 
   return (

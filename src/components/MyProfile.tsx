@@ -423,8 +423,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
 
                   <div>
                     <span className="text-[9px] text-slate-500 font-mono font-bold tracking-widest block">FOUNDER MEDALLION REGISTRY</span>
-                    <h3 className="text-sm font-extrabold text-white tracking-wide">
-                      yudeyou0118@gmail.com
+                    <h3 className="text-sm font-extrabold text-white tracking-wide font-mono">
+                      R1-FOUNDER-0001
                     </h3>
                     
                     <div className="mt-1.5 flex flex-col gap-1">
