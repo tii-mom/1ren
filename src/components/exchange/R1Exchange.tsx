@@ -401,7 +401,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                 setUsdtInput("");
                 setR1Input("");
               }}
-              className={`py-2 text-xs font-black rounded-xl uppercase transition-all cursor-pointer min-h-[38px] ${
+              className={`py-2 text-xs font-black rounded-xl uppercase transition-all cursor-pointer min-h-[44px] ${
                 activeTab === "buy"
                   ? "bg-green-500 text-slate-950 font-black shadow-[0_0_12px_rgba(34,197,94,0.3)]"
                   : "text-slate-400 hover:text-white"
@@ -415,7 +415,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                 setUsdtInput("");
                 setR1Input("");
               }}
-              className={`py-2 text-xs font-black rounded-xl uppercase transition-all cursor-pointer min-h-[38px] ${
+              className={`py-2 text-xs font-black rounded-xl uppercase transition-all cursor-pointer min-h-[44px] ${
                 activeTab === "sell"
                   ? "bg-red-500 text-slate-950 font-black shadow-[0_0_12px_rgba(239,68,68,0.3)]"
                   : "text-slate-400 hover:text-white"

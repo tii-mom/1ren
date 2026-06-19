@@ -644,19 +644,19 @@ export default function App() {
   };
 
   const handleLaunchToken = (tokenData: UserIssuedToken): boolean => {
-    if (stats.hashFragments < 100) {
-      triggerNotification(
-        "R1 押金不足",
-        "可锁定质押押金不足 100 R1，无法发行影子 Token。",
-        "warn"
-      );
+    const latestStats = statsRef.current;
+    if (latestStats.hashFragments < 100) {
+      triggerNotification("R1 押金不足", "可锁定质押押金不足 100 R1，无法发行影子 Token。", "warn");
       return false;
     }
 
-    setStats((prev) => ({
-      ...prev,
-      hashFragments: Math.max(0, prev.hashFragments - 100)
-    }));
+    setStats((prev) => {
+      if (prev.hashFragments < 100) return prev;
+      return {
+        ...prev,
+        hashFragments: prev.hashFragments - 100
+      };
+    });
 
     addRecordLog("exchange", 100, `[发行中心] 质押锁仓 100 R1 成功发行影子 Token [${tokenData.symbol}]`);
 
