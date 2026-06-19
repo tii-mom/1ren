@@ -19,7 +19,8 @@ interface DashboardProps {
   r1Price: number;
   r1PriceDir: "up" | "down" | "flat";
   r1PriceChange: number;
-  handleExchangeTrade: (type: "buy" | "sell", amount: number, price: number) => boolean;
+  aiTokenBuybackPrice: number; // Simulated AI Token buyback price (NEW!)
+  handleExchangeTrade: (type: "buy" | "sell", amount: number, price: number, assetType?: "r1" | "ai") => boolean;
   setCurrentTab: (tab: string) => void;
 }
 
@@ -45,11 +46,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   r1Price,
   r1PriceDir,
   r1PriceChange,
+  aiTokenBuybackPrice,
   handleExchangeTrade,
   setCurrentTab
 }) => {
-  // R1 display micro-increment ticking
-  const [displayR1, setDisplayR1] = useState<number>(stats.hashFragments);
+  // AI Token display micro-increment ticking
+  const [displayAiToken, setDisplayAiToken] = useState<number>(stats.hashFragments);
 
   // Recovery Pool remaining USDT limit (FOMO)
   const [recoveryPool, setRecoveryPool] = useState<number>(854291.50);
@@ -62,12 +64,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   // Local state for scrolling FOMO trades feed
   const [fomoTrades, setFomoTrades] = useState(MOCK_FOMO_TRADES);
 
-  // Sync displayR1 value with stats.hashFragments
+  // Sync displayAiToken value with stats.hashFragments
   useEffect(() => {
-    setDisplayR1(stats.hashFragments);
+    setDisplayAiToken(stats.hashFragments);
   }, [stats.hashFragments]);
 
-  // displayR1 100ms micro-increment loop (does NOT modify stats.hashFragments directly)
+  // displayAiToken 100ms micro-increment loop (does NOT modify stats.hashFragments directly)
   useEffect(() => {
     const ratePerSecond = (stats.baseHashpower * 0.00015 + stats.teamHashpower * 0.00005) * 
       (stats.buffActiveUntil ? 2.0 : 1.0);
@@ -75,7 +77,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (ratePerSecond <= 0) return;
 
     const interval = setInterval(() => {
-      setDisplayR1((prev) => {
+      setDisplayAiToken((prev) => {
         const next = prev + ratePerSecond * 0.1;
         // Anti-drift check: if local display is too far from true stats, sync it back
         if (Math.abs(next - stats.hashFragments) > 2.0) {
@@ -128,8 +130,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   // Calculations
   const sellableValuation = useMemo(() => {
-    return displayR1 * r1Price;
-  }, [displayR1, r1Price]);
+    return displayAiToken * aiTokenBuybackPrice;
+  }, [displayAiToken, aiTokenBuybackPrice]);
 
   const todayOutputEstimate = useMemo(() => {
     return (stats.baseHashpower * 12.96 + stats.teamHashpower * 4.32) * (stats.buffActiveUntil ? 2.0 : 1.0);
@@ -140,7 +142,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const condLevel = stats.level !== "S0 自有设备节点";
     const condOutput = stats.accumulatedFragments >= 500.0;
     const condDevices = activeMiners.filter(m => m.status !== "stopped").length >= 1;
-    const condStake = stats.hashFragments >= 100.0;
+    const condStake = (stats.r1Balance || 0) >= 100.0;
     
     let metCount = 0;
     if (condLevel) metCount++;
@@ -156,7 +158,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       metCount,
       percent: Math.round((metCount / 4) * 100)
     };
-  }, [stats.level, stats.accumulatedFragments, activeMiners, stats.hashFragments]);
+  }, [stats.level, stats.accumulatedFragments, activeMiners, stats.r1Balance]);
 
   // Quick sell execution
   const handleQuickSellSubmit = () => {
@@ -166,7 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     if (sellPct === 100) {
       setShowDoubleConfirm(true);
     } else {
-      const success = handleExchangeTrade("sell", sellAmount, r1Price);
+      const success = handleExchangeTrade("sell", sellAmount, aiTokenBuybackPrice, "ai");
       if (success) {
         setIsSellSheetOpen(false);
       }
@@ -174,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   };
 
   const executeAllSell = () => {
-    const success = handleExchangeTrade("sell", stats.hashFragments, r1Price);
+    const success = handleExchangeTrade("sell", stats.hashFragments, aiTokenBuybackPrice, "ai");
     if (success) {
       setShowDoubleConfirm(false);
       setIsSellSheetOpen(false);
@@ -206,12 +208,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Big numbers row */}
         <div className="mt-6 space-y-1 relative z-10">
-          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">我的 R1 Token 资产</span>
+          <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">我的 AI Token 余额</span>
           <div className="flex items-baseline gap-1.5 flex-wrap">
             <span className="text-4xl sm:text-5xl font-mono font-black text-white tracking-tight select-all">
-              {displayR1.toFixed(5)}
+              {displayAiToken.toFixed(5)}
             </span>
-            <span className="text-yellow-400 font-black text-xs uppercase tracking-widest text-glow-gold">R1</span>
+            <span className="text-yellow-400 font-black text-xs uppercase tracking-widest text-glow-gold">AI</span>
           </div>
         </div>
 
@@ -238,7 +240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           {/* Sellable Valuation */}
           <div className="bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
-            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">可卖出估值 (USDT)</span>
+            <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">AI Token 回收估值 (USDT)</span>
             <span className="text-base font-bold text-white block mt-2 text-glow-cyan">
               {sellableValuation.toFixed(4)} <span className="text-[9px] font-normal text-slate-500">U</span>
             </span>
@@ -248,7 +250,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-black/30 border border-white/5 rounded-2xl p-4 flex flex-col justify-between col-span-2 sm:col-span-1">
             <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">今日预计净产出</span>
             <span className="text-base font-bold text-cyan-400 block mt-2">
-              +{todayOutputEstimate.toFixed(2)} <span className="text-[9px] font-normal text-slate-500">R1</span>
+              +{todayOutputEstimate.toFixed(2)} <span className="text-[9px] font-normal text-slate-500">AI</span>
             </span>
           </div>
 
@@ -261,10 +263,52 @@ export const Dashboard: React.FC<DashboardProps> = ({
             className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-white font-black text-sm uppercase tracking-widest shadow-[0_4px_20px_rgba(6,182,212,0.4)] active:scale-98 transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
           >
             <Coins className="size-4.5 animate-pulse" />
-            一键市价卖出 (Instant Sell)
+            一键出售 AI Token 变现 (Instant Sell)
           </button>
         </div>
 
+      </div>
+
+      {/* 🚀 三资产说明卡片 */}
+      <div className="bg-white/5 border border-white/10 rounded-3xl p-5 backdrop-blur-md relative overflow-hidden">
+        <h3 className="text-xs font-black text-slate-300 flex items-center gap-1.5 uppercase tracking-widest mb-3.5">
+          <Activity className="text-cyan-400 size-4" />
+          R1 增长终端资产模型指南
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+          {/* Card 1: AI Token */}
+          <div className="bg-black/35 border border-white/5 p-4 rounded-2xl space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-yellow-400" />
+              <span className="font-extrabold text-white">AI Token / 算力 Token</span>
+            </div>
+            <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
+              由您的算力并网设备运行及平台任务产生。它代表大模型的 API 可用额度，不是加密货币。可直接出售给平台换取 USDT，或自用/抵扣运营开销。
+            </p>
+          </div>
+          
+          {/* Card 2: R1 */}
+          <div className="bg-black/35 border border-white/5 p-4 rounded-2xl space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              <span className="font-extrabold text-white">R1 (平台权益 Token)</span>
+            </div>
+            <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
+              平台的专属权益 Token。当前作为内部账本资产，未来可以 Jetton 形式部署到 TON 链。不由设备直接产生，用于发行锁仓、提高回收额度及手续费折扣。
+            </p>
+          </div>
+
+          {/* Card 3: 公司 Token */}
+          <div className="bg-black/35 border border-white/5 p-4 rounded-2xl space-y-2">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-purple-400" />
+              <span className="font-extrabold text-white">用户公司 Token</span>
+            </div>
+            <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
+              用户自己的“1人算力公司”发行的影子项目资产。需通过平台对设备并网记录、AI Token 历史产出及 R1 锁定押金进行严格审核方可挂牌。
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* 📊 FOMO Grid and Launch Qualification Checklist */}
@@ -300,7 +344,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="flex items-center justify-between p-2 rounded-xl bg-black/20 border border-white/[0.03]">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${issuedConditions.condOutput ? "bg-emerald-400" : "bg-red-400"}`} />
-                  2. 累计 R1 产出 &gt;= 500 R1
+                  2. 累计 AI Token 产出 &gt;= 500 AI Token
                 </span>
                 <span className={`font-bold ${issuedConditions.condOutput ? "text-emerald-400" : "text-slate-500"}`}>
                   {stats.accumulatedFragments.toFixed(1)} / 500
@@ -318,10 +362,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="flex items-center justify-between p-2 rounded-xl bg-black/20 border border-white/[0.03]">
                 <span className="text-slate-400 flex items-center gap-1.5">
                   <span className={`w-1.5 h-1.5 rounded-full ${issuedConditions.condStake ? "bg-emerald-400" : "bg-red-400"}`} />
-                  4. 可锁定押金余额 &gt;= 100 R1
+                  4. 可锁定押金 R1 余额 &gt;= 100 R1
                 </span>
                 <span className={`font-bold ${issuedConditions.condStake ? "text-emerald-400" : "text-slate-500"}`}>
-                  {stats.hashFragments.toFixed(1)} / 100
+                  {(stats.r1Balance || 0).toFixed(1)} / 100
                 </span>
               </div>
             </div>
@@ -356,7 +400,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <span className="text-base font-bold text-amber-400 block mt-1.5 text-glow-gold animate-pulse">
                   {recoveryPool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-400">U</span>
                 </span>
-                <span className="text-[8.5px] text-slate-500 block mt-1">智能合约清算额度递减中</span>
+                <span className="text-[8.5px] text-slate-500 block mt-1">模拟回收池额度递减中</span>
               </div>
               <div className="bg-black/40 border border-white/5 p-3 rounded-2xl text-center">
                 <span className="text-[8px] text-slate-500 block font-mono font-bold uppercase tracking-wider">即将发行公司 Token 榜</span>
@@ -429,7 +473,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <Activity className="text-cyan-400 size-4" />
               每日在线 AI 算力贡献任务
             </h2>
-            <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">完成分发 R1</span>
+            <span className="text-[10px] text-slate-500 font-mono uppercase tracking-wider">分发 AI Token</span>
           </div>
 
           <div className="space-y-3.5">
@@ -441,7 +485,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   设备物理并网在线检测
                 </h3>
                 <p className="text-[10px] text-slate-400 mt-1 leading-snug">
-                  验证本地手机 CPU / 浏览器共享核心可用性，分发 R1。
+                  验证本地手机 CPU / 浏览器共享核心可用性，分发 AI Token。
                 </p>
               </div>
               <button
@@ -453,7 +497,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     : "bg-cyan-500 hover:brightness-110 text-slate-950 font-black shadow-[0_0_10px_rgba(6,182,212,0.25)] active:scale-95"
                 }`}
               >
-                {tasks.watchAd ? "已完成在线" : "+2.0 R1"}
+                {tasks.watchAd ? "已完成在线" : "+2.0 AI"}
               </button>
             </div>
 
@@ -477,7 +521,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     : "bg-cyan-500 hover:brightness-110 text-slate-950 font-black shadow-[0_0_10px_rgba(6,182,212,0.25)] active:scale-95"
                 }`}
               >
-                {tasks.likeContent ? "已跑完微调" : "+1.0 R1"}
+                {tasks.likeContent ? "已跑完微调" : "+1.0 AI"}
               </button>
             </div>
 
@@ -501,7 +545,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     : "bg-cyan-500 hover:brightness-110 text-slate-950 font-black shadow-[0_0_10px_rgba(6,182,212,0.25)] active:scale-95"
                 }`}
               >
-                {tasks.shareMoments ? "链接已送达" : "+3.0 R1"}
+                {tasks.shareMoments ? "链接已送达" : "+3.0 AI"}
               </button>
             </div>
           </div>
@@ -534,7 +578,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-1.5 font-sans">
                   <Coins className="text-amber-400 size-4.5" />
-                  一键市价卖出 R1
+                  一键出售 AI Token 变现
                 </h3>
                 <button
                   onClick={() => setIsSellSheetOpen(false)}
@@ -547,15 +591,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Assets details */}
               <div className="bg-black/35 border border-white/5 rounded-2xl p-4 space-y-3 font-mono text-xs">
                 <div className="flex justify-between text-slate-400">
-                  <span>R1 Token 可用余额:</span>
-                  <span className="text-white font-bold">{stats.hashFragments.toFixed(4)} R1</span>
+                  <span>AI Token 可用余额:</span>
+                  <span className="text-white font-bold">{stats.hashFragments.toFixed(4)} AI</span>
                 </div>
                 <div className="flex justify-between text-slate-400">
-                  <span>当前 R1/USDT 现价:</span>
-                  <span className="text-cyan-400 font-bold">{r1Price.toFixed(6)} USDT</span>
+                  <span>当前 AI Token 回收折算价:</span>
+                  <span className="text-cyan-400 font-bold">{aiTokenBuybackPrice.toFixed(6)} USDT</span>
                 </div>
-                <div className="h-px bg-white/5" />
-                
+
                 <div className="flex justify-between items-center text-slate-400 pt-1">
                   <span>选择卖出比例:</span>
                   <span className="text-amber-400 font-bold text-sm">{sellPct}%</span>
@@ -568,35 +611,39 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       key={pct}
                       type="button"
                       onClick={() => setSellPct(pct)}
-                      className={`py-2 text-[11px] font-bold rounded-xl border transition-all active:scale-95 cursor-pointer flex items-center justify-center min-h-[44px] ${
-                        sellPct === pct
-                          ? "bg-amber-500 text-slate-950 border-amber-400 font-black shadow-[0_0_10px_rgba(245,158,11,0.25)]"
-                          : "bg-white/5 border-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200"
-                      }`}
+                      className="py-2 text-[10px] font-mono font-bold rounded-xl border border-white/5 bg-white/5 text-slate-400 hover:bg-white/10 hover:text-slate-200 active:scale-95 transition-all min-h-[44px] cursor-pointer"
                     >
                       {pct === 100 ? "全部" : `${pct}%`}
                     </button>
                   ))}
+                </div>
+
+                <div className="h-px bg-white/5" />
+                
+                <div className="flex justify-between text-slate-400 pt-1">
+                  <span>出售 AI Token 数量:</span>
+                  <span className="text-white font-mono font-bold">{(stats.hashFragments * sellPct / 100).toFixed(4)} AI</span>
                 </div>
               </div>
 
               {/* Settlement estimates */}
               <div className="bg-amber-500/[0.03] border border-amber-500/10 rounded-2xl p-4 space-y-2.5">
                 <div className="flex justify-between text-xs text-slate-400">
-                  <span>卖出 R1 数量:</span>
-                  <span className="text-white font-mono font-bold">{(stats.hashFragments * sellPct / 100).toFixed(4)} R1</span>
-                </div>
-                <div className="flex justify-between text-xs text-slate-400">
                   <span>交易手续费 (0.3%):</span>
-                  <span className="text-slate-500 font-mono">{(stats.hashFragments * sellPct / 100 * r1Price * 0.003).toFixed(5)} USDT</span>
+                  <span className="text-slate-500 font-mono">{(stats.hashFragments * sellPct / 100 * aiTokenBuybackPrice * 0.003).toFixed(5)} USDT</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold text-slate-300 border-t border-white/5 pt-2">
                   <span>预计收到 USDT:</span>
                   <span className="text-emerald-400 font-mono text-sm text-glow-green">
-                    {((stats.hashFragments * sellPct / 100 * r1Price) * 0.997).toFixed(4)} U
+                    {((stats.hashFragments * sellPct / 100 * aiTokenBuybackPrice) * 0.997).toFixed(4)} U
                   </span>
                 </div>
               </div>
+
+              {/* Tip info warning */}
+              <p className="text-[10px] text-slate-500 font-medium font-sans leading-normal pl-1">
+                提示：按平台当前 AI Token 模拟回收价计算，不等同于 R1/USDT 现价。
+              </p>
 
               {/* Execution button */}
               <button
@@ -625,9 +672,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
               
               <div>
-                <h3 className="text-sm font-extrabold text-red-400 uppercase tracking-wider">确认清仓全部 R1 Token？</h3>
-                <p className="text-xs text-slate-400 mt-2 leading-relaxed font-sans font-medium">
-                  此操作将全额扣除您的 {stats.hashFragments.toFixed(4)} R1 Token 并变现为模拟金。请确认这是您的意向操作。
+                <h3 className="text-sm font-extrabold text-red-400 uppercase tracking-wider">确认清仓全部 AI Token？</h3>
+                <p className="text-xs text-slate-400 leading-relaxed font-sans mt-2">
+                  此操作将全额扣除您的 {stats.hashFragments.toFixed(4)} AI Token 并变现为模拟金。请确认这是您的意向操作。
                 </p>
               </div>
 

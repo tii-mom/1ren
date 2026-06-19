@@ -69,6 +69,7 @@ export const MOCK_STORE_ITEMS: StoreItem[] = [
 export const INITIAL_STATS: UserStats = {
   hashFragments: 32.54,
   hashCrystals: 0,
+  r1Balance: 150.0, // Initial R1 Token balance
   level: UserLevel.ZERO,
   baseHashpower: 50.0, // Initial 50P for free users
   teamHashpower: 0.0,  // Start with 0 team hashpower
@@ -100,7 +101,11 @@ export const loadStats = (): UserStats => {
   const data = localStorage.getItem("hashcube_user_stats");
   if (!data) return INITIAL_STATS;
   try {
-    return JSON.parse(data);
+    const parsed = JSON.parse(data);
+    if (parsed && typeof parsed === "object" && parsed.r1Balance === undefined) {
+      parsed.r1Balance = 150.0;
+    }
+    return parsed;
   } catch {
     return INITIAL_STATS;
   }

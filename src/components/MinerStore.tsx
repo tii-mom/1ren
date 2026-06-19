@@ -11,7 +11,7 @@ const MINER_TEMPLATES: MinerTemplate[] = [
     cost: 100,
     contractDays: 30,
     baseYieldRange: [0.008, 0.012],
-    benefits: ["组建并激活AI算力公司（解锁S1职级）", "基础AI文本推理与图像代工业务处理", "日分红率：历史参考 0.8% ~ 1.2%（受景气度浮动）"],
+    benefits: ["组建并激活AI算力公司（解锁S1职级）", "基础AI文本推理与图像代工业务处理", "AI Token 日产出率：参考 0.8% ~ 1.2%（受景气度浮动）"],
     stockToday: 5
   },
   {
@@ -20,7 +20,7 @@ const MINER_TEMPLATES: MinerTemplate[] = [
     cost: 500,
     contractDays: 60,
     baseYieldRange: [0.009, 0.013],
-    benefits: ["分配“紧急高价值订单”，随机激发算能溢出", "多节点分布式智能深度计算训练代工", "日分红率：历史参考 0.9% ~ 1.3%"],
+    benefits: ["分配“紧急高价值订单”，随机激发算能溢出", "多节点分布式智能深度计算训练代工", "AI Token 日产出率：参考 0.9% ~ 1.3%"],
     stockToday: 3
   },
   {
@@ -29,7 +29,7 @@ const MINER_TEMPLATES: MinerTemplate[] = [
     cost: 2000,
     contractDays: 90,
     baseYieldRange: [0.011, 0.015],
-    benefits: ["尊享“弹性算力调度”，免液冷多维折损率 +10%", "下一代全新人工智能硬件认购权与保养优先权", "日分红率：历史参考 1.1% ~ 1.5%"],
+    benefits: ["尊享“弹性算力调度”，免液冷多维折损率 +10%", "下一代全新人工智能硬件认购权与保养优先权", "AI Token 日产出率：参考 1.1% ~ 1.5%"],
     stockToday: 2
   },
   {
@@ -38,7 +38,7 @@ const MINER_TEMPLATES: MinerTemplate[] = [
     cost: 10000,
     contractDays: 9999, // Permanent
     baseYieldRange: [0.013, 0.018],
-    benefits: ["享有全球AI服务费 3% 加权分红、公司上市铭牌", "永续挖矿周期，全寿命不老化无损耗契约", "全级劳动合同雇员产出提速 20%", "自动授权集团调配决策委员会一席高爆席位"],
+    benefits: ["享有全网 AI 算力调用额度 3% 加权分成、公司上市铭牌", "永续挖矿周期，全寿命不老化无损耗契约", "全级劳动合同雇员产出提速 20%", "自动授权集团调配决策委员会一席高爆席位"],
     stockToday: 1
   }
 ];
@@ -139,7 +139,7 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
               全球节点算力调度
             </h2>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans font-medium">
-              算力分布式物理信道对冲平衡中轨。全网日化哈希产出效率受全球总并网装机量周期对冲调控。
+              平台提供“模拟设备并网 + API 权益”托管服务，全网分布式算力对冲平衡。日化产出效率受全球总并网装机量周期调控。
             </p>
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
@@ -168,12 +168,12 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
               <span className="text-[8px] font-mono text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/20 font-bold">LIVE REPORT</span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans font-medium">
-              综合托管电费损耗、耗散液及自检阻热系数扣除后的<b>真实净结算收益折算率</b>。主频状态佳时利润最高。
+              综合托管电费损耗、耗散液及自检阻热系数扣除后的<b>真实净结算 API 算力产出折算率</b>。主频状态佳时产出最高。
             </p>
           </div>
           <div className="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
             <div>
-              <span className="text-[9px] text-slate-500 block uppercase font-mono">日化参考经营效益</span>
+              <span className="text-[9px] text-slate-500 block uppercase font-mono">日化参考产出效益</span>
               <span className="text-xl font-mono font-black text-emerald-400 text-glow-green">
                 {profitMargin.toFixed(2)}%
               </span>
@@ -237,9 +237,9 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
           <div className="absolute top-0 left-0 bg-red-500/20 w-full h-[1.5px]" />
           <ServerCrash className="text-red-400 size-6 shrink-0" />
           <div>
-            <h4 className="font-extrabold text-red-200 uppercase tracking-wide">⚠️ 免费体验AI算力孵化契约已过期折算！</h4>
+            <h4 className="font-extrabold text-red-200 uppercase tracking-wide">⚠️ 免费体验AI算力并网服务已过期！</h4>
             <p className="mt-1 text-xs text-slate-400 leading-relaxed font-medium">
-              您的免费体验引擎已停机，算力产出已暂停。立即激活下方任意一款企业算力推理/训练引擎设备，即可恢复被断层上抛阻断的收益，并获得您1人有限公司的企业主管职级特权！
+              您的免费体验引擎已停机，算力产出已暂停。立即激活下方任意一款企业算力推理/训练引擎设备，即可恢复算力产出，获取 AI Token 模型额度！
             </p>
           </div>
         </div>
@@ -485,7 +485,7 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
                       <td className="p-3 sm:p-4 font-mono text-green-400 font-bold">1.30% ~ 1.80%</td>
                     </tr>
                     <tr className="hover:bg-white/[0.01] transition-colors">
-                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">理论月度收益 (Est. Yield)</td>
+                      <td className="p-3 sm:p-4 font-bold text-white bg-white/[0.01]">理论月度算力产出价值 (Est. Yield)</td>
                       <td className="p-3 sm:p-4 font-mono text-white">24 U ~ 36 U</td>
                       <td className="p-3 sm:p-4 font-mono text-white">135 U ~ 195 U</td>
                       <td className="p-3 sm:p-4 font-mono text-white font-bold">660 U ~ 900 U</td>

@@ -71,7 +71,7 @@ export const ItemStore: React.FC<ItemStoreProps> = ({ stats, onRedeemItem, onBuy
 
   const handleUseItem = (item: StoreItem) => {
     if (stats.hashFragments < item.costFragments) {
-      setNotice(`Token 不足。该服务需要 ${item.costFragments.toLocaleString()} Token。`);
+      setNotice(`AI Token 不足。该服务需要 ${item.costFragments.toLocaleString()} AI Token。`);
       setTimeout(() => setNotice(null), 2600);
       return;
     }
@@ -82,7 +82,7 @@ export const ItemStore: React.FC<ItemStoreProps> = ({ stats, onRedeemItem, onBuy
   const handleBuyMaintenance = () => {
     if (!onBuyCoolant) return;
     if (stats.hashFragments < 50) {
-      setNotice("Token 不足。购买 GPU 集群温控维护液需要 50 Token。");
+      setNotice("AI Token 不足。购买 GPU 集群温控维护液需要 50 AI Token。");
       setTimeout(() => setNotice(null), 2600);
       return;
     }
@@ -171,12 +171,12 @@ export const ItemStore: React.FC<ItemStoreProps> = ({ stats, onRedeemItem, onBuy
                     <div className="p-3 rounded-2xl bg-cyan-500/10 border border-cyan-500/20">
                       {renderStoreItemIcon(item.id, "size-6 text-cyan-400")}
                     </div>
-                    <span className="text-sm font-mono font-black text-cyan-400">{item.costFragments} Token</span>
+                    <span className="text-sm font-mono font-black text-cyan-400">{item.costFragments} AI Token</span>
                   </div>
                   <h2 className="text-sm font-bold text-white mt-5">{item.name}</h2>
                   <p className="text-xs text-slate-400 mt-2 leading-relaxed">{item.description}</p>
                   <div className="mt-5 text-xs font-bold text-cyan-300 flex items-center gap-2">
-                    {affordable ? "立即开通" : "Token 不足"}
+                    {affordable ? "立即开通" : "AI Token 不足"}
                     <PackageOpen className="size-4" />
                   </div>
                 </button>
@@ -201,8 +201,8 @@ export const ItemStore: React.FC<ItemStoreProps> = ({ stats, onRedeemItem, onBuy
                   </div>
                   <div className="mt-5 pt-4 border-t border-white/5">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] text-slate-500 font-bold">所需 Token</span>
-                      <span className="text-sm font-mono font-black text-cyan-400">{item.costFragments.toLocaleString()}</span>
+                      <span className="text-[10px] text-slate-500 font-bold">所需 AI Token</span>
+                      <span className="text-sm font-mono font-black text-cyan-400">{item.costFragments.toLocaleString()} AI</span>
                     </div>
                     <button
                       disabled={!affordable}
@@ -213,7 +213,7 @@ export const ItemStore: React.FC<ItemStoreProps> = ({ stats, onRedeemItem, onBuy
                           : "bg-white/5 text-slate-600 cursor-not-allowed"
                       }`}
                     >
-                      {affordable ? "开通或兑换" : "Token 不足"}
+                      {affordable ? "开通或兑换" : "AI Token 不足"}
                     </button>
                   </div>
                 </div>

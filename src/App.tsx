@@ -27,6 +27,7 @@ export default function App() {
   // R1 Market price and exchange states
   const [r1Price, setR1Price] = useState<number>(0.05);
   const dayOpenPrice = 0.0475;
+  const aiTokenBuybackPrice = 0.001;
   const r1PriceChange = useMemo(() => {
     return parseFloat((((r1Price - dayOpenPrice) / dayOpenPrice) * 100).toFixed(2));
   }, [r1Price]);
@@ -51,61 +52,88 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
-  // Shared unified transaction handler for R1/USDT spot exchange
-  const handleExchangeTrade = (type: "buy" | "sell", amount: number, price: number): boolean => {
+  // Shared unified transaction handler for R1/USDT spot exchange and platform AI Token buybacks
+  const handleExchangeTrade = (type: "buy" | "sell", amount: number, price: number, assetType: "r1" | "ai" = "r1"): boolean => {
     if (!Number.isFinite(amount) || amount <= 0 || !Number.isFinite(price) || price <= 0) {
       triggerNotification("交易失败", "输入的交易数量或报价无效。", "warn");
       return false;
     }
     const feePct = 0.003; // 0.3% commission fee
     
-    if (type === "buy") {
-      // amount is the quantity of USDT the user pays
-      if (usdtBalance < amount) {
-        triggerNotification("余额不足", `买入所需 ${amount.toFixed(2)} USDT 超出您的模拟金余额。`, "warn");
-        return false;
+    if (assetType === "ai") {
+      if (type === "sell") {
+        if (stats.hashFragments < amount) {
+          triggerNotification("额度不足", `变现所需 ${amount.toFixed(4)} AI Token 超出您的余额。`, "warn");
+          return false;
+        }
+        
+        const totalSold = amount;
+        const usdtReceivedRaw = totalSold * price;
+        const fee = usdtReceivedRaw * feePct;
+        const usdtReceivedNet = usdtReceivedRaw - fee;
+        
+        setStats(prev => ({
+          ...prev,
+          hashFragments: Math.max(0, prev.hashFragments - totalSold)
+        }));
+        setUsdtBalance(prev => prev + usdtReceivedNet);
+        
+        const logDesc = `[平台回收] 出售 ${totalSold.toFixed(4)} AI Token @ ${price.toFixed(4)} USDT`;
+        addRecordLog("trade", totalSold, logDesc);
+        
+        triggerNotification("平台变现已撮合", `成功向平台出售 ${totalSold.toFixed(4)} AI Token (扣除 0.3% 手续费)。`, "success");
+        return true;
       }
-      
-      const totalCost = amount;
-      const r1ReceivedRaw = totalCost / price;
-      const fee = r1ReceivedRaw * feePct;
-      const r1ReceivedNet = r1ReceivedRaw - fee;
-      
-      setUsdtBalance(prev => prev - totalCost);
-      setStats(prev => ({
-        ...prev,
-        hashFragments: prev.hashFragments + r1ReceivedNet,
-        accumulatedFragments: prev.accumulatedFragments + r1ReceivedNet
-      }));
-      
-      const logDesc = `[交易市场] 买入 ${r1ReceivedNet.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
-      addRecordLog("trade", r1ReceivedNet, logDesc);
-      
-      triggerNotification("买入交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格买入 ${r1ReceivedNet.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
-      return true;
+      return false;
     } else {
-      // amount is the quantity of R1 the user sells
-      if (stats.hashFragments < amount) {
-        triggerNotification("Token 不足", `卖出所需 ${amount.toFixed(4)} R1 超出您的 R1 Token 余额。`, "warn");
-        return false;
+      if (type === "buy") {
+        // amount is the quantity of USDT the user pays
+        if (usdtBalance < amount) {
+          triggerNotification("余额不足", `买入所需 ${amount.toFixed(2)} USDT 超出您的模拟金余额。`, "warn");
+          return false;
+        }
+        
+        const totalCost = amount;
+        const r1ReceivedRaw = totalCost / price;
+        const fee = r1ReceivedRaw * feePct;
+        const r1ReceivedNet = r1ReceivedRaw - fee;
+        
+        setUsdtBalance(prev => prev - totalCost);
+        setStats(prev => ({
+          ...prev,
+          r1Balance: (prev.r1Balance || 0) + r1ReceivedNet
+        }));
+        
+        const logDesc = `[交易市场] 买入 ${r1ReceivedNet.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
+        addRecordLog("trade", r1ReceivedNet, logDesc);
+        
+        triggerNotification("买入交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格买入 ${r1ReceivedNet.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
+        return true;
+      } else {
+        // amount is the quantity of R1 the user sells
+        const latestStats = statsRef.current;
+        if ((latestStats.r1Balance || 0) < amount) {
+          triggerNotification("R1 不足", `卖出所需 ${amount.toFixed(4)} R1 超出您的 R1 权益余额。`, "warn");
+          return false;
+        }
+        
+        const totalR1Sold = amount;
+        const usdtReceivedRaw = totalR1Sold * price;
+        const fee = usdtReceivedRaw * feePct;
+        const usdtReceivedNet = usdtReceivedRaw - fee;
+        
+        setStats(prev => ({
+          ...prev,
+          r1Balance: Math.max(0, (prev.r1Balance || 0) - totalR1Sold)
+        }));
+        setUsdtBalance(prev => prev + usdtReceivedNet);
+        
+        const logDesc = `[交易市场] 卖出 ${totalR1Sold.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
+        addRecordLog("trade", totalR1Sold, logDesc);
+        
+        triggerNotification("卖出交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格卖出 ${totalR1Sold.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
+        return true;
       }
-      
-      const totalR1Sold = amount;
-      const usdtReceivedRaw = totalR1Sold * price;
-      const fee = usdtReceivedRaw * feePct;
-      const usdtReceivedNet = usdtReceivedRaw - fee;
-      
-      setStats(prev => ({
-        ...prev,
-        hashFragments: Math.max(0, prev.hashFragments - totalR1Sold)
-      }));
-      setUsdtBalance(prev => prev + usdtReceivedNet);
-      
-      const logDesc = `[交易市场] 卖出 ${totalR1Sold.toFixed(4)} R1 @ ${price.toFixed(6)} USDT`;
-      addRecordLog("trade", totalR1Sold, logDesc);
-      
-      triggerNotification("卖出交易已撮合", `成功以 ${price.toFixed(5)} USDT 价格卖出 ${totalR1Sold.toFixed(4)} R1 (扣除 0.3% 手续费)。`, "success");
-      return true;
     }
   };
 
@@ -260,8 +288,8 @@ export default function App() {
           
           if (prev.hashFragments < 100 && nextFragments >= 100) {
             triggerNotification(
-              "Token 已满足打包条件",
-              "账户余额已满 100 Token。您可以生成 API Key、访问 URL，或提交平台回收申请。",
+              "AI Token 已满足打包条件",
+              "账户 AI Token 已满 100，可生成 API Key、访问 URL，或提交平台回收申请。",
               "crystal"
             );
           }
@@ -407,14 +435,14 @@ export default function App() {
     addRecordLog("buff", 0, "开启一小时算力加速，产出倍率提升。");
     triggerNotification(
       "算力加速已开启",
-      "接下来 60 分钟内，自有设备和团队节点的 Token 产出会按加速倍率结算。",
+      "接下来 60 分钟内，自有设备和团队节点的 AI Token 产出会按加速倍率结算。",
       "success"
     );
   };
 
   const handleSynthesize = () => {
     if (stats.hashFragments < 100) {
-      triggerNotification("Token 不足", "生成一组 API/URL 需要 100 Token。您可以连接手机、完成每日任务或购买高性能并网设备继续产出。", "warn");
+      triggerNotification("AI Token 不足", "生成一组 API/URL 需要 100 AI Token。您可以连接手机、完成每日任务或购买高性能并网设备继续产出。 ", "warn");
       return;
     }
 
@@ -425,17 +453,17 @@ export default function App() {
       totalSynthesized: prev.totalSynthesized + 1
     }));
 
-    addRecordLog("synthesize", 100, "消耗 100 Token 生成 1 组可用算力凭证。");
+    addRecordLog("synthesize", 100, "消耗 100 AI Token 生成 1 组可用算力凭证。");
     triggerNotification(
       "API/URL 凭证已生成",
-      "已消耗 100 Token，生成 1 组算力服务凭证。您可以用于自用、对外出售或提交平台回收。",
+      "已消耗 100 AI Token，生成 1 组算力服务凭证。您可以用于自用、对外出售或提交平台回收。 ",
       "success"
     );
   };
 
   const handleBuyCoolant = (cost: number) => {
     if (stats.hashFragments < cost) {
-      triggerNotification("Token 不足", "购买设备维护包需要 50 Token。", "warn");
+      triggerNotification("AI Token 不足", "购买设备维护包需要 50 AI Token。", "warn");
       return;
     }
 
@@ -445,10 +473,10 @@ export default function App() {
       coolantCount: prev.coolantCount + 1
     }));
 
-    addRecordLog("coolant", cost, "花费 50 Token 购买设备维护包。");
+    addRecordLog("coolant", cost, "花费 50 AI Token 购买设备维护包。");
     triggerNotification(
       "设备维护包已入库",
-      "已扣除 50 Token。可在后台为降频设备执行维护，恢复设备产出效率。",
+      "已扣除 50 AI Token。可在后台为降频设备执行维护，恢复设备产出效率。 ",
       "success"
     );
   };
@@ -510,7 +538,7 @@ export default function App() {
     addRecordLog("mining", 0, "激活免费本地显卡共享算力体验节点 (7天试用)");
     triggerNotification(
       "本地共享节点已激活",
-      "系统已为您开启 7 天体验节点。您可以用自有本地设备并网共享算力，产出少量 Token。",
+      "系统已为您开启 7 天体验节点。您可以用自有本地设备并网共享算力，产出少量 AI Token。",
       "success"
     );
   };
@@ -552,7 +580,7 @@ export default function App() {
     addRecordLog("mining", template.cost, `本地部署并激活并网 ${template.name} 算力设备。`);
     triggerNotification(
       "设备部署并网成功",
-      `已扣除 ${template.cost} USDT 并本地部署激活【${template.name}】。设备会并网微调训练产生 Token，可用于 API/URL、出售或平台回收。`,
+      `已扣除 ${template.cost} USDT 并本地部署激活【${template.name}】。设备会并网微调训练产生 AI Token，可用于 API/URL、出售或平台回收。`,
       "success"
     );
     setCurrentTab("my"); // Auto jump to My Profile to check
@@ -560,7 +588,7 @@ export default function App() {
 
   const handleRedeemItem = (item: StoreItem) => {
     if (stats.hashFragments < item.costFragments) {
-      triggerNotification("Token 不足", `该项目需要 ${item.costFragments.toLocaleString()} Token，当前余额不足。`, "warn");
+      triggerNotification("AI Token 不足", `该项目需要 ${item.costFragments.toLocaleString()} AI Token，当前余额不足。`, "warn");
       return;
     }
 
@@ -573,7 +601,7 @@ export default function App() {
     addRecordLog("exchange", item.costFragments, `兑换或开通「${item.name}」。`);
     triggerNotification(
       "订单已受理",
-      `已消耗 ${item.costFragments.toLocaleString()} Token。实体商品会进入发货流程，算力服务会生成对应凭证。`,
+      `已消耗 ${item.costFragments.toLocaleString()} AI Token。实体商品会进入发货流程，算力服务会生成对应凭证。`,
       "success"
     );
   };
@@ -588,7 +616,7 @@ export default function App() {
     addRecordLog("mining", rewardShards, description);
     triggerNotification(
       "设备签到成功",
-      `今日在线检测完成，获得 +${rewardShards} Token。${addCoolant ? "额外获得 1 个设备维护包。" : ""}`,
+      `今日在线检测完成，获得 +${rewardShards} AI Token。${addCoolant ? "额外获得 1 个设备维护包。" : ""}`,
       "success"
     );
   };
@@ -637,24 +665,25 @@ export default function App() {
       ...prev,
       level: UserLevel.S1,
       accumulatedFragments: 500.0,
-      hashFragments: 150.0
+      hashFragments: 500.0,
+      r1Balance: 150.0
     }));
 
-    triggerNotification("开发测试条件已满足", "已将等级设为 S1，累计产出设为 500 R1，余额设为 150 R1，并激活算力设备。", "success");
+    triggerNotification("开发测试条件已满足", "已将等级设为 S1，累计 AI Token 产出设为 500，AI Token 余额设为 500，R1 权益余额设为 150，并激活算力设备。", "success");
   };
 
   const handleLaunchToken = (tokenData: UserIssuedToken): boolean => {
     const latestStats = statsRef.current;
-    if (latestStats.hashFragments < 100) {
+    if ((latestStats.r1Balance || 0) < 100) {
       triggerNotification("R1 押金不足", "可锁定质押押金不足 100 R1，无法发行影子 Token。", "warn");
       return false;
     }
 
     setStats((prev) => {
-      if (prev.hashFragments < 100) return prev;
+      if ((prev.r1Balance || 0) < 100) return prev;
       return {
         ...prev,
-        hashFragments: prev.hashFragments - 100
+        r1Balance: prev.r1Balance - 100
       };
     });
 
@@ -743,6 +772,7 @@ export default function App() {
                   r1Price={r1Price}
                   r1PriceDir={r1PriceDir}
                   r1PriceChange={r1PriceChange}
+                  aiTokenBuybackPrice={aiTokenBuybackPrice}
                   handleExchangeTrade={handleExchangeTrade}
                   setCurrentTab={setCurrentTab}
                 />
@@ -783,6 +813,7 @@ export default function App() {
                   stats={stats}
                   activeMiners={activeMiners}
                   records={records}
+                  usdtBalance={usdtBalance}
                   onSynthesize={handleSynthesize}
                   onBuyCoolant={handleBuyCoolant}
                   onApplyCoolant={handleApplyCoolant}
@@ -907,6 +938,7 @@ export default function App() {
 const INITIAL_STATS: UserStats = {
   hashFragments: 32.54,
   hashCrystals: 0,
+  r1Balance: 150.0, // Initial R1 Token balance
   level: UserLevel.ZERO,
   baseHashpower: 50.0, // 50P startup license
   teamHashpower: 0.0,
