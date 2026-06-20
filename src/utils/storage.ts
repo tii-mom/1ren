@@ -330,6 +330,5 @@ export const addRecord = (records: MiningRecord[], type: MiningRecord["type"], a
     description
   };
   const updated = [newRecord, ...records].slice(0, 100); // Keep last 100 logs
-  saveRecords(updated);
   return updated;
 };
