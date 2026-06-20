@@ -26,6 +26,13 @@ export default function App() {
   const [records, setRecords] = useState<MiningRecord[]>([]);
   const [usdtBalance, setUsdtBalance] = useState<number>(500.0); // Start with 500U free mock testbed fund
 
+  // Lifecycle & Throttling Refs for localStorage writes
+  const hasHydratedRef = useRef<boolean>(false);
+  const pendingStatsRef = useRef<UserStats | null>(null);
+  const pendingMinersRef = useRef<ActiveMiner[] | null>(null);
+  const pendingRecordsRef = useRef<MiningRecord[] | null>(null);
+  const flushTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // R1 Market price and exchange states
   const [r1Price, setR1Price] = useState<number>(0.05);
   const dayOpenPrice = 0.0475;
@@ -171,6 +178,7 @@ export default function App() {
       setTasks(loadedT || INITIAL_TASKS);
       setRecords(Array.isArray(loadedR) ? loadedR : []);
       setUsdtBalance(loadedUsdt);
+      hasHydratedRef.current = true;
     } catch (e) {
       console.error("Critical storage load failed, restoring to defaults:", e);
       setStats(INITIAL_STATS);
@@ -178,27 +186,104 @@ export default function App() {
       setTasks(INITIAL_TASKS);
       setRecords([]);
       setUsdtBalance(500.0);
+      hasHydratedRef.current = true;
     }
+  }, []);
+
+  const scheduleStorageFlush = () => {
+    if (flushTimeoutRef.current) return;
+
+    flushTimeoutRef.current = setTimeout(() => {
+      flushStorageNow();
+    }, 5000);
+  };
+
+  const flushStorageNow = () => {
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
+      flushTimeoutRef.current = null;
+    }
+
+    if (pendingStatsRef.current) {
+      try {
+        saveStats(pendingStatsRef.current);
+      } catch (e) {
+        console.warn("Could not flush stats to storage:", e);
+      }
+      pendingStatsRef.current = null;
+    }
+
+    if (pendingMinersRef.current) {
+      try {
+        saveMiners(pendingMinersRef.current);
+      } catch (e) {
+        console.warn("Could not flush miners to storage:", e);
+      }
+      pendingMinersRef.current = null;
+    }
+
+    if (pendingRecordsRef.current) {
+      try {
+        saveRecords(pendingRecordsRef.current);
+      } catch (e) {
+        console.warn("Could not flush records to storage:", e);
+      }
+      pendingRecordsRef.current = null;
+    }
+  };
+
+  // Synchronous flush ref to avoid closure issues
+  const flushStorageNowRef = useRef(flushStorageNow);
+  useEffect(() => {
+    flushStorageNowRef.current = flushStorageNow;
+  });
+
+  // Page visibility & unload handlers
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "hidden") {
+        flushStorageNowRef.current();
+      }
+    };
+
+    const handleBeforeUnload = () => {
+      flushStorageNowRef.current();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      
+      // Cleanup timeout and flush on unmount
+      if (flushTimeoutRef.current) {
+        clearTimeout(flushTimeoutRef.current);
+        flushTimeoutRef.current = null;
+      }
+      flushStorageNowRef.current();
+    };
   }, []);
 
   // Save changes
   useEffect(() => {
-    try {
-      if (stats.inviteCode) {
-        saveStats(stats);
-      }
-    } catch (e) {
-      console.warn("Could not save stats to storage:", e);
-    }
+    if (!hasHydratedRef.current) return;
+    pendingStatsRef.current = stats;
+    scheduleStorageFlush();
   }, [stats]);
 
   useEffect(() => {
-    try {
-      saveMiners(activeMiners);
-    } catch (e) {
-      console.warn("Could not save miners to storage:", e);
-    }
+    if (!hasHydratedRef.current) return;
+    pendingMinersRef.current = activeMiners;
+    scheduleStorageFlush();
   }, [activeMiners]);
+
+  useEffect(() => {
+    if (!hasHydratedRef.current) return;
+    pendingRecordsRef.current = records;
+    scheduleStorageFlush();
+  }, [records]);
 
   useEffect(() => {
     try {
@@ -545,6 +630,15 @@ export default function App() {
   };
 
   const handleResetDemoData = () => {
+    // 0. Clear pending flush first to prevent writing old states back
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
+      flushTimeoutRef.current = null;
+    }
+    pendingStatsRef.current = null;
+    pendingMinersRef.current = null;
+    pendingRecordsRef.current = null;
+
     // 1. Clear all localStorage keys in STORAGE_KEYS and LEGACY_STORAGE_KEYS
     try {
       Object.values(STORAGE_KEYS).forEach(key => {
