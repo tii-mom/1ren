@@ -184,11 +184,8 @@ app.get("/api/assets", async (c) => {
 // GET /api/devices/catalog
 app.get("/api/devices/catalog", async (c) => {
   try {
-    let catalog = await getDeviceCatalog(c.env.DB);
-    if (catalog.length === 0) {
-      await seedDeviceCatalog(c.env.DB);
-      catalog = await getDeviceCatalog(c.env.DB);
-    }
+    await seedDeviceCatalog(c.env.DB);
+    const catalog = await getDeviceCatalog(c.env.DB);
     return jsonResponse({
       devices: catalog.map(d => ({
         id: d.id,

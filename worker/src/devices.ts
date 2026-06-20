@@ -110,7 +110,7 @@ export async function seedDeviceCatalog(db: D1Database): Promise<void> {
       display_order: 2,
       ref_hardware_name: "Mac mini M4 Pro",
       ref_spec_description: "14核CPU/20核GPU, NPU 38 TOPS, 24GB 统一内存, 512GB SSD",
-      marketPriceRange: "市场参考价 $1,399 起",
+      market_price_range: "市场参考价 $1,399 起",
       suitable_scenarios: "独立开发者 Agent 流程调度",
       api_scenarios: "适合复杂网页分析、多 Agent 自动化流程调度、进阶文本推理 (Claude 3.5 Sonnet)",
       daily_ai_token_yield: 100000,
@@ -200,14 +200,39 @@ export async function seedDeviceCatalog(db: D1Database): Promise<void> {
   const statements = devices.map((d) => {
     return db
       .prepare(
-        `INSERT OR REPLACE INTO devices (
+        `INSERT INTO devices (
           id, code, name, device_type, base_hashpower, rent_usdt, rent_r1, 
           duration_seconds, duration_days, is_demo, is_active,
           display_tier, display_order, ref_hardware_name, ref_spec_description,
           market_price_range, suitable_scenarios, api_scenarios, daily_ai_token_yield,
           yield_multiplier, purchase_limit, stock_count, is_featured, disclaimer_text,
           created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(id) DO UPDATE SET
+          code = excluded.code,
+          name = excluded.name,
+          device_type = excluded.device_type,
+          base_hashpower = excluded.base_hashpower,
+          rent_usdt = excluded.rent_usdt,
+          rent_r1 = excluded.rent_r1,
+          duration_seconds = excluded.duration_seconds,
+          duration_days = excluded.duration_days,
+          is_demo = excluded.is_demo,
+          is_active = excluded.is_active,
+          display_tier = excluded.display_tier,
+          display_order = excluded.display_order,
+          ref_hardware_name = excluded.ref_hardware_name,
+          ref_spec_description = excluded.ref_spec_description,
+          market_price_range = excluded.market_price_range,
+          suitable_scenarios = excluded.suitable_scenarios,
+          api_scenarios = excluded.api_scenarios,
+          daily_ai_token_yield = excluded.daily_ai_token_yield,
+          yield_multiplier = excluded.yield_multiplier,
+          purchase_limit = excluded.purchase_limit,
+          stock_count = excluded.stock_count,
+          is_featured = excluded.is_featured,
+          disclaimer_text = excluded.disclaimer_text,
+          updated_at = excluded.updated_at`
       )
       .bind(
         d.id,
@@ -239,7 +264,13 @@ export async function seedDeviceCatalog(db: D1Database): Promise<void> {
       );
   });
 
-  await db.batch(statements);
+  const deactivationStmt = db.prepare(
+    `UPDATE devices
+     SET is_active = 0, updated_at = ?
+     WHERE id IN ('dev_bronze', 'dev_silver', 'dev_gold', 'dev_genesis')`
+  ).bind(now);
+
+  await db.batch([...statements, deactivationStmt]);
 }
 
 export async function getDeviceCatalog(db: D1Database): Promise<DeviceRow[]> {

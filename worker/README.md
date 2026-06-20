@@ -118,3 +118,38 @@ npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM devices;"
 npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM device_orders;"
 npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM mining_records;"
 ```
+
+---
+
+## D1 Database Migration & Catalog Verification (PR #17)
+
+### 1. Run Migration 0002
+To apply the spec-anchored configuration fields to an existing local D1 database:
+```bash
+npx wrangler d1 migrations apply r1-growth-dev --local
+```
+> [!NOTE]
+> SQLite / D1 does not natively support conditional column additions like `ADD COLUMN IF NOT EXISTS`. Therefore, this migration is designed as a one-time operation. Running it repeatedly on the same database may produce duplicate column errors.
+
+### 2. Verify Catalog Updates & Typo Fix
+1. Start the backend worker locally:
+   ```bash
+   npm run worker:dev
+   ```
+2. Request the catalog endpoint:
+   ```bash
+   curl -s http://localhost:8787/api/devices/catalog
+   ```
+3. Verify the output matches these criteria:
+   - Contains `dev_demo` + L1-L5 specs: `miner-l1`, `miner-l2`, `miner-l3`, `miner-l4`, `miner-l5`.
+   - `miner-l2.marketPriceRange` is not null (verify the typo fix: `market_price_range` in seeder).
+   - Contains all the newly introduced metadata fields (e.g. `displayTier`, `refHardwareName`, `refSpecDescription`, `marketPriceRange`, `dailyAiTokenYield`, `disclaimerText`).
+   - Legacy devices `dev_bronze`, `dev_silver`, `dev_gold`, and `dev_genesis` are automatically set to `is_active = 0` (inactive) in the database and filtered out of the catalog response.
+
+### 3. Verify Legacy Data Integrity
+To verify that the old devices were deactivated instead of being deleted (retaining compatibility for existing orders referencing them):
+```bash
+npx wrangler d1 execute r1-growth-dev --local --command="SELECT id, name, is_active FROM devices WHERE id IN ('dev_bronze', 'dev_silver', 'dev_gold', 'dev_genesis');"
+```
+Output should confirm all four rows remain in the table but with `is_active = 0`.
+
