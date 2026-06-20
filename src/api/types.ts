@@ -37,3 +37,42 @@ export interface HealthResponse {
   timestamp: string;
   service: string;
 }
+
+export interface DeviceCatalogItem {
+  id: string;
+  code: string;
+  name: string;
+  deviceType: string;
+  baseHashpower: number;
+  rentUsdt: number;
+  rentR1: number;
+  durationSeconds: number | null;
+  durationDays: number | null;
+  isDemo: boolean;
+}
+
+export interface DeviceOrder {
+  id: string;
+  userId: string;
+  deviceId: string;
+  orderType: string;
+  status: string;
+  paidAsset: string | null;
+  paidAmount: number;
+  startsAt: string;
+  expiresAt: string;
+  createdAt: string;
+}
+
+export interface DeviceCatalogResponse {
+  devices: DeviceCatalogItem[];
+}
+
+export interface ActiveDevicesResponse {
+  orders: DeviceOrder[];
+}
+
+export interface MiningRecordsResponse {
+  records: any[];
+}
+

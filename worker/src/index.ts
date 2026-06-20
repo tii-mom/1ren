@@ -12,6 +12,14 @@ import {
   mapAssetAccounts,
   AssetAccountRow
 } from "./db";
+import {
+  seedDeviceCatalog,
+  getDeviceCatalog,
+  getActiveDeviceOrders,
+  createDemoDeviceOrder,
+  createDeviceRentOrder,
+  mapDeviceOrder
+} from "./devices";
 
 type Bindings = {
   DB: D1Database;
@@ -170,6 +178,172 @@ app.get("/api/assets", async (c) => {
   } catch (e: any) {
     console.error("Fetch assets error:", e);
     return errorResponse("SERVER_ERROR", "Failed to fetch user assets", 500);
+  }
+});
+
+// GET /api/devices/catalog
+app.get("/api/devices/catalog", async (c) => {
+  try {
+    let catalog = await getDeviceCatalog(c.env.DB);
+    if (catalog.length === 0) {
+      await seedDeviceCatalog(c.env.DB);
+      catalog = await getDeviceCatalog(c.env.DB);
+    }
+    return jsonResponse({
+      devices: catalog.map(d => ({
+        id: d.id,
+        code: d.code,
+        name: d.name,
+        deviceType: d.device_type,
+        baseHashpower: d.base_hashpower,
+        rentUsdt: d.rent_usdt,
+        rentR1: d.rent_r1,
+        durationSeconds: d.duration_seconds,
+        durationDays: d.duration_days,
+        isDemo: d.is_demo === 1,
+      })),
+    });
+  } catch (e: any) {
+    console.error("Fetch catalog error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch device catalog: " + e.message, 500);
+  }
+});
+
+// POST /api/devices/demo-activate
+app.post("/api/devices/demo-activate", async (c) => {
+  try {
+    const token = getBearerToken(c.req.raw.headers);
+    if (!token) {
+      return errorResponse("UNAUTHORIZED", "Missing or invalid Authorization header", 401);
+    }
+
+    const sessionData = await getSessionUser(c.env.DB, token);
+    if (!sessionData) {
+      return errorResponse("UNAUTHORIZED", "Invalid, expired, or revoked session token", 401);
+    }
+
+    const { user } = sessionData;
+    const now = new Date().toISOString();
+
+    const order = await createDemoDeviceOrder(c.env.DB, user.id, now);
+
+    // Write system event
+    const eventId = generateId("evt");
+    const payload = JSON.stringify({ orderId: order.id });
+    await c.env.DB
+      .prepare(
+        "INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, ?, ?, ?, ?)"
+      )
+      .bind(eventId, user.id, "demo_device_activated", payload, now)
+      .run();
+
+    return jsonResponse({
+      order: mapDeviceOrder(order),
+    });
+  } catch (e: any) {
+    console.error("Demo activation error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to activate demo device: " + e.message, 500);
+  }
+});
+
+// POST /api/devices/rent
+app.post("/api/devices/rent", async (c) => {
+  try {
+    const token = getBearerToken(c.req.raw.headers);
+    if (!token) {
+      return errorResponse("UNAUTHORIZED", "Missing or invalid Authorization header", 401);
+    }
+
+    const sessionData = await getSessionUser(c.env.DB, token);
+    if (!sessionData) {
+      return errorResponse("UNAUTHORIZED", "Invalid, expired, or revoked session token", 401);
+    }
+
+    const { user } = sessionData;
+    const body = await c.req.json().catch(() => ({}));
+    const deviceId = body.deviceId;
+
+    if (!deviceId) {
+      return errorResponse("BAD_REQUEST", "Missing deviceId in request body", 400);
+    }
+
+    const now = new Date().toISOString();
+    const order = await createDeviceRentOrder(c.env.DB, user.id, deviceId, now);
+
+    if (!order) {
+      return errorResponse("NOT_FOUND", "Device template not found", 404);
+    }
+
+    // Write system event
+    const eventId = generateId("evt");
+    const payload = JSON.stringify({ orderId: order.id, deviceId, simulated: true });
+    await c.env.DB
+      .prepare(
+        "INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, ?, ?, ?, ?)"
+      )
+      .bind(eventId, user.id, "device_rent_created", payload, now)
+      .run();
+
+    return jsonResponse({
+      order: mapDeviceOrder(order),
+    });
+  } catch (e: any) {
+    console.error("Device rent error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to rent device: " + e.message, 500);
+  }
+});
+
+// GET /api/devices/active
+app.get("/api/devices/active", async (c) => {
+  try {
+    const token = getBearerToken(c.req.raw.headers);
+    if (!token) {
+      return errorResponse("UNAUTHORIZED", "Missing or invalid Authorization header", 401);
+    }
+
+    const sessionData = await getSessionUser(c.env.DB, token);
+    if (!sessionData) {
+      return errorResponse("UNAUTHORIZED", "Invalid, expired, or revoked session token", 401);
+    }
+
+    const { user } = sessionData;
+    const activeOrders = await getActiveDeviceOrders(c.env.DB, user.id);
+
+    return jsonResponse({
+      orders: activeOrders.map(mapDeviceOrder),
+    });
+  } catch (e: any) {
+    console.error("Fetch active devices error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch active devices: " + e.message, 500);
+  }
+});
+
+// GET /api/mining/records
+app.get("/api/mining/records", async (c) => {
+  try {
+    const token = getBearerToken(c.req.raw.headers);
+    if (!token) {
+      return errorResponse("UNAUTHORIZED", "Missing or invalid Authorization header", 401);
+    }
+
+    const sessionData = await getSessionUser(c.env.DB, token);
+    if (!sessionData) {
+      return errorResponse("UNAUTHORIZED", "Invalid, expired, or revoked session token", 401);
+    }
+
+    const { user } = sessionData;
+
+    const { results } = await c.env.DB
+      .prepare("SELECT * FROM mining_records WHERE user_id = ? ORDER BY created_at DESC LIMIT 50")
+      .bind(user.id)
+      .all();
+
+    return jsonResponse({
+      records: results || [],
+    });
+  } catch (e: any) {
+    console.error("Fetch mining records error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch mining records: " + e.message, 500);
   }
 });
 

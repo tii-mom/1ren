@@ -1006,6 +1006,7 @@ export default function App() {
                   backendConnected={backendConn.backendConnected}
                   backendUser={backendConn.backendUser}
                   backendAssets={backendConn.backendAssets}
+                  backendDevices={backendConn.backendDevices}
                   backendError={backendConn.backendError}
                   backendLoading={backendConn.backendLoading}
                   onConnectBackend={backendConn.connectBackend}

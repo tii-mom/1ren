@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { apiClient } from "../api/client";
-import { UserResponse, AssetsResponse } from "../api/types";
+import { UserResponse, AssetsResponse, DeviceOrder } from "../api/types";
 
 export function useBackendConnection() {
   const [backendConnected, setBackendConnected] = useState<boolean>(false);
   const [backendUser, setBackendUser] = useState<UserResponse | null>(null);
   const [backendAssets, setBackendAssets] = useState<AssetsResponse | null>(null);
+  const [backendDevices, setBackendDevices] = useState<DeviceOrder[]>([]);
   const [backendError, setBackendError] = useState<string | null>(null);
   const [backendLoading, setBackendLoading] = useState<boolean>(false);
 
@@ -15,6 +16,7 @@ export function useBackendConnection() {
     apiClient.clearSession();
     setBackendUser(null);
     setBackendAssets(null);
+    setBackendDevices([]);
     setBackendConnected(false);
     setBackendError(null);
   };
@@ -29,9 +31,12 @@ export function useBackendConnection() {
       const user = await apiClient.getMe();
       // 3. Get Assets
       const assets = await apiClient.getAssets();
+      // 4. Get Active Devices (PR-3E)
+      const devicesRes = await apiClient.getActiveDevices();
 
       setBackendUser(user);
       setBackendAssets(assets);
+      setBackendDevices(devicesRes.orders || []);
       setBackendConnected(true);
     } catch (err: any) {
       console.error("Failed to connect backend:", err);
@@ -62,9 +67,11 @@ export function useBackendConnection() {
     try {
       const user = await apiClient.getMe();
       const assets = await apiClient.getAssets();
+      const devicesRes = await apiClient.getActiveDevices();
 
       setBackendUser(user);
       setBackendAssets(assets);
+      setBackendDevices(devicesRes.orders || []);
       setBackendConnected(true);
     } catch (err: any) {
       console.error("Failed to refresh backend:", err);
@@ -98,6 +105,7 @@ export function useBackendConnection() {
     backendConnected,
     backendUser,
     backendAssets,
+    backendDevices,
     backendError,
     backendLoading,
     connectBackend,

@@ -1,4 +1,4 @@
-import { HealthResponse, SessionResponse, UserResponse, AssetsResponse } from "./types";
+import { HealthResponse, SessionResponse, UserResponse, AssetsResponse, DeviceCatalogResponse, ActiveDevicesResponse, MiningRecordsResponse, DeviceOrder } from "./types";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8787";
 
@@ -70,6 +70,36 @@ class ApiClient {
   // GET /api/assets
   async getAssets(): Promise<AssetsResponse> {
     return this.request<AssetsResponse>("/api/assets");
+  }
+
+  // GET /api/devices/catalog
+  async getDeviceCatalog(): Promise<DeviceCatalogResponse> {
+    return this.request<DeviceCatalogResponse>("/api/devices/catalog");
+  }
+
+  // POST /api/devices/demo-activate
+  async activateDemoDevice(): Promise<{ order: DeviceOrder }> {
+    return this.request<{ order: DeviceOrder }>("/api/devices/demo-activate", {
+      method: "POST"
+    });
+  }
+
+  // POST /api/devices/rent
+  async rentDevice(deviceId: string): Promise<{ order: DeviceOrder }> {
+    return this.request<{ order: DeviceOrder }>("/api/devices/rent", {
+      method: "POST",
+      body: JSON.stringify({ deviceId })
+    });
+  }
+
+  // GET /api/devices/active
+  async getActiveDevices(): Promise<ActiveDevicesResponse> {
+    return this.request<ActiveDevicesResponse>("/api/devices/active");
+  }
+
+  // GET /api/mining/records
+  async getMiningRecords(): Promise<MiningRecordsResponse> {
+    return this.request<MiningRecordsResponse>("/api/mining/records");
   }
 }
 

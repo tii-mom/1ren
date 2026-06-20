@@ -74,6 +74,36 @@ Verify initial default asset balances using the token:
 curl -H "Authorization: Bearer YOUR_SESSION_TOKEN" http://localhost:8787/api/assets
 ```
 
+### 5. Get Device Catalog (`/api/devices/catalog`)
+Retrieve available devices templates:
+```bash
+curl http://localhost:8787/api/devices/catalog
+```
+
+### 6. Activate 3-Minute Demo Node (`/api/devices/demo-activate`)
+Activate the demo node for 180 seconds:
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_SESSION_TOKEN" http://localhost:8787/api/devices/demo-activate
+```
+
+### 7. Rent Simulated Device (`/api/devices/rent`)
+Rent a simulated bronze device (does not deduct real balance):
+```bash
+curl -X POST -H "Authorization: Bearer YOUR_SESSION_TOKEN" -H "Content-Type: application/json" -d '{"deviceId":"dev_bronze"}' http://localhost:8787/api/devices/rent
+```
+
+### 8. Get Active Device Orders (`/api/devices/active`)
+Retrieve current user's active/non-expired device orders:
+```bash
+curl -H "Authorization: Bearer YOUR_SESSION_TOKEN" http://localhost:8787/api/devices/active
+```
+
+### 9. Get Mining Records (`/api/mining/records`)
+Retrieve recent mining records:
+```bash
+curl -H "Authorization: Bearer YOUR_SESSION_TOKEN" http://localhost:8787/api/mining/records
+```
+
 ---
 
 ## View Local D1 Data
@@ -84,4 +114,7 @@ npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM users;"
 npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM sessions;"
 npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM asset_accounts;"
 npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM system_events;"
+npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM devices;"
+npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM device_orders;"
+npx wrangler d1 execute r1-growth-dev --local --command="SELECT * FROM mining_records;"
 ```
