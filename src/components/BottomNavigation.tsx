@@ -60,7 +60,7 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({
     { id: "exchange", label: "交易", icon: TrendingUp },
     { id: "store", label: "机房", icon: Cpu },
     { id: "launch", label: "发行", icon: Coins },
-    { id: "my", label: "我的", icon: User },
+    { id: "my", label: "我的公司", icon: User },
   ];
 
   const getTabStroke = (tabId: string, active: boolean) => {

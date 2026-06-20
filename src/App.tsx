@@ -8,7 +8,7 @@ import { Header } from "./components/Header";
 import { Dashboard } from "./components/Dashboard";
 import { MinerStore } from "./components/MinerStore";
 import { R1Exchange } from "./components/exchange/R1Exchange";
-import { MyProfile } from "./components/MyProfile";
+import { MyCompany } from "./components/MyCompany";
 import { TokenLaunch } from "./components/launch/TokenLaunch";
 import { BottomNavigation } from "./components/BottomNavigation";
 import { Info, X, Zap, CheckCircle2, ShieldCheck, Heart, AlertTriangle, TrendingUp, Coins } from "lucide-react";
@@ -991,7 +991,7 @@ export default function App() {
 
 
                {currentTab === "my" && (
-                <MyProfile
+                <MyCompany
                   stats={stats}
                   activeMiners={activeMiners}
                   records={records}
@@ -1016,7 +1016,6 @@ export default function App() {
                   onForceAgeMiner={() => {
                     setActiveMiners((prev) => {
                       if (prev.length === 0) return prev;
-                      // find first running non-demo miner and force set its status to decayed
                       let aged = false;
                       return prev.map((m) => {
                         if (!m.isDemo && m.status === "running" && !aged) {
