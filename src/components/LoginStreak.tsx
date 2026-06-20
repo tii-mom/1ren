@@ -101,7 +101,7 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
         <div className="space-y-1">
           <span className="text-[9px] text-cyan-400 font-mono font-extrabold tracking-widest block uppercase">LOYALTY REBATE SEQUENCE</span>
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <CalendarCheck2 className="text-yellow-400 size-4.5" />
+            <CalendarCheck2 className="text-yellow-400 size-4" />
             连续并网签到日历 (7-Day Login Streak)
           </h3>
           <p className="text-xs text-slate-400 font-sans">

@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { UserStats, UserLevel, ActiveMiner, TaskState, MiningRecord, StoreItem, MinerTemplate, UserIssuedToken } from "./types";
 import { 
-  loadStats, saveStats, loadMiners, saveMiners, loadTasks, saveTasks, loadRecords, saveRecords, addRecord, MOCK_STORE_ITEMS, MOCK_REFERRALS
+  loadStats, saveStats, loadMiners, saveMiners, loadTasks, saveTasks, loadRecords, saveRecords, addRecord, MOCK_STORE_ITEMS, MOCK_REFERRALS,
+  INITIAL_STATS, INITIAL_TASKS
 } from "./utils/storage";
 import { Header } from "./components/Header";
 import { Dashboard } from "./components/Dashboard";
@@ -246,10 +247,10 @@ export default function App() {
         let nextInEfficiency = miner.efficiency;
         let nextStatus = miner.status;
 
-        // Special rule for free demo miner expiry simulator (stops after 180 seconds of live use for impressive countdown demo)
+        // Special rule for free demo miner expiry simulator (stops after 180 seconds of live use for 3 minutes demo)
         if (miner.isDemo) {
           const ageSecs = (Date.now() - new Date(miner.purchasedAt).getTime()) / 1000;
-          if (ageSecs > 180) { // stops after 180 seconds of live use
+          if (ageSecs > 180) { // stops after 3 minutes of live use
             nextStatus = "stopped";
             nextInEfficiency = 0;
             hasChange = true;
@@ -536,10 +537,10 @@ export default function App() {
     setActiveMiners((prev) => [demoMiner, ...prev]);
     setStats((prev) => ({ ...prev, hasClaimedDemo: true }));
 
-    addRecordLog("mining", 0, "激活免费本地显卡共享算力体验节点 (7天试用)");
+    addRecordLog("mining", 0, "激活免费本地显卡共享算力体验节点 (3 分钟体验)");
     triggerNotification(
       "本地共享节点已激活",
-      "系统已为您开启 7 天体验节点。您可以用自有本地设备并网共享算力，产出少量 AI Token。",
+      "系统已为您开启 3 分钟体验节点。您可以用自有本地设备并网共享算力，产出少量 AI Token。",
       "success"
     );
   };
@@ -623,6 +624,11 @@ export default function App() {
   };
 
   const handleSatisfyLaunchConditions = () => {
+    if (!import.meta.env.DEV) {
+      console.warn("Blocked DEV-only launch condition shortcut in production.");
+      return;
+    }
+
     const activeNonDemoSumCost = activeMiners
       .filter(m => !m.isDemo && m.status !== "stopped")
       .reduce((sum, m) => sum + m.cost, 0);
@@ -725,7 +731,7 @@ export default function App() {
 
     const remaining = targetToken.targetPool - targetToken.raisedUsdt;
     if (amount > remaining) {
-      triggerNotification("超额支持", `支持金额不能超过支持池剩余额度 ${remaining.toFixed(2)} USDT。`, "warn");
+      triggerNotification("超额支持", `支持金额不能超过模拟支持池剩余额度 ${remaining.toFixed(2)} USDT。`, "warn");
       return false;
     }
 
@@ -754,8 +760,8 @@ export default function App() {
     if (!targetToken) return false;
 
     updateIssuedToken(tokenId, (t) => ({ ...t, status: newStatus }));
-    addRecordLog("exchange", 0, `[影子挂牌] 影子公司 [${targetToken.symbol}] 正式挂牌上市`);
-    triggerNotification("挂牌成功", `影子公司 [${targetToken.symbol}] 正式在影子交易区挂牌上市！`, "success");
+    addRecordLog("exchange", 0, `[影子挂牌] 影子公司 [${targetToken.symbol}] 影子挂牌成功`);
+    triggerNotification("影子挂牌成功", `影子公司 [${targetToken.symbol}] 影子挂牌成功！`, "success");
     // Trigger stats state update to refresh Dashboard/exchange views
     setStats(prev => ({ ...prev }));
     return true;
@@ -909,7 +915,7 @@ export default function App() {
         {/* Ambient footer */}
         <footer className="border-t border-slate-900/60 bg-transparent mt-12 py-6 text-center text-[10px] text-slate-500 pb-2">
           <p>© 2026 1人算力有限公司 · 本地设备部署并网 · 训练大模型产出 Token</p>
-          <p className="text-[9px] text-zinc-650 mt-1 max-w-xl mx-auto leading-relaxed">
+          <p className="text-[9px] text-zinc-600 mt-1 max-w-xl mx-auto leading-relaxed">
             Token 作为平台内算力服务额度，可用于生成 API Key、访问 URL、兑换服务或提交平台回收。
           </p>
         </footer>
@@ -974,8 +980,8 @@ export default function App() {
                 onClick={() => setModal(null)}
                 className={`w-full py-3.5 sm:py-2.5 rounded-xl font-extrabold text-[11px] sm:text-xs tracking-wider uppercase transition-colors select-none touch-manipulation min-h-[44px] cursor-pointer flex items-center justify-center ${
                   modal.type === "crystal"
-                    ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 hover:brightness-110 active:scale-98"
-                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 active:bg-slate-750"
+                    ? "bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 hover:brightness-110 active:scale-95"
+                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 active:bg-slate-700"
                 }`}
               >
                 收到并关闭
@@ -989,29 +995,3 @@ export default function App() {
     </div>
   );
 }
-
-// Initial defaults to satisfy hydration compilation
-const INITIAL_STATS: UserStats = {
-  hashFragments: 32.54,
-  hashCrystals: 0,
-  r1Balance: 150.0, // Initial R1 Token balance
-  level: UserLevel.ZERO,
-  baseHashpower: 50.0, // 50P startup license
-  teamHashpower: 0.0,
-  totalSynthesized: 0,
-  accumulatedFragments: 32.54,
-  inviteCode: "CUBE888",
-  referrerName: "星际创世神-波卡老詹",
-  coolantCount: 1,
-  buffActiveUntil: null,
-  hasClaimedDemo: false,
-  directReferrals: 0,
-  totalReferrals: 0
-};
-
-const INITIAL_TASKS: TaskState = {
-  watchAd: false,
-  likeContent: false,
-  shareMoments: false,
-  lastCompletedDate: ""
-};

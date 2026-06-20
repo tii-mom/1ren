@@ -298,7 +298,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                 <span className="text-slate-200 block font-bold mt-0.5">0.04100</span>
               </div>
               <div>
-                <span>24H 成交额(USDT)</span>
+                <span>24H 模拟成交额(USDT)</span>
                 <span className="text-slate-200 block font-bold mt-0.5">1,289,321</span>
               </div>
               <div>
@@ -576,9 +576,9 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                           readOnly
                           value={estimatedUsdtReceived > 0 ? estimatedUsdtReceived.toFixed(4) : ""}
                           placeholder="扣除费率后预计收到"
-                          className="w-full bg-slate-900/60 border border-white/5 text-slate-505 rounded-xl py-3 px-4 text-sm font-mono focus:outline-none cursor-not-allowed"
+                          className="w-full bg-slate-900/60 border border-white/5 text-slate-500 rounded-xl py-3 px-4 text-sm font-mono focus:outline-none cursor-not-allowed"
                         />
-                        <span className="absolute right-4 top-3.5 text-xs text-slate-505 font-mono">USDT</span>
+                        <span className="absolute right-4 top-3.5 text-xs text-slate-500 font-mono">USDT</span>
                       </div>
                     </div>
                   </div>
@@ -632,8 +632,8 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                   type="submit"
                   className={`w-full py-4 rounded-2xl text-slate-950 font-black text-xs uppercase tracking-widest transition-all min-h-[44px] cursor-pointer ${
                     activeTab === "buy"
-                      ? "bg-gradient-to-r from-green-400 to-emerald-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-98 hover:brightness-110"
-                      : "bg-gradient-to-r from-red-400 to-rose-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-98 hover:brightness-110"
+                      ? "bg-gradient-to-r from-green-400 to-emerald-500 shadow-[0_0_20px_rgba(34,197,94,0.3)] active:scale-95 hover:brightness-110"
+                      : "bg-gradient-to-r from-red-400 to-rose-500 shadow-[0_0_20px_rgba(239,68,68,0.3)] active:scale-95 hover:brightness-110"
                   }`}
                 >
                   {activeTab === "buy" ? "极速买入 R1 (BUY)" : "极速卖出 R1 (SELL)"}
@@ -645,7 +645,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
           {/* 4. Recent Execution flow */}
           <div className="bg-slate-950/60 border border-white/10 rounded-3xl p-5 relative overflow-hidden backdrop-blur-md">
             <h3 className="text-xs font-black text-slate-300 mb-3 uppercase tracking-wider">
-              全网撮合交易历史 (Recent Trades)
+              模拟撮合交易历史 (Recent Trades)
             </h3>
             
             <div className="grid grid-cols-4 text-[9.5px] font-mono text-slate-500 border-b border-white/5 pb-1.5 mb-2">
@@ -675,7 +675,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
           <div className="bg-amber-500/10 border border-amber-500/20 p-4 rounded-2xl flex gap-3 text-xs text-slate-400">
             <Info className="size-5 text-amber-400 shrink-0 mt-0.5" />
             <p className="leading-relaxed font-sans">
-              <strong>提示：</strong>当前为 V1 本地模拟环境。每个公司影子 Token 发行均需经过并网设备记录、AI Token 历史产出记录及锁定 100 R1 押金校验。支持池资金满额后可申请挂牌影子交易区。
+              <strong>提示：</strong>当前为 V1 本地模拟环境。每个公司影子 Token 发行均需经过并网设备记录、AI Token 历史产出记录及锁定 100 R1 押金校验。模拟支持池资金满额后可申请挂牌影子交易区。
             </p>
           </div>
 
@@ -684,7 +684,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
               <Coins className="size-12 text-slate-600 mx-auto animate-pulse" />
               <div className="space-y-1">
                 <h4 className="text-sm font-extrabold text-slate-300">暂无公司 Token</h4>
-                <p className="text-xs text-slate-505 font-sans max-w-sm mx-auto leading-normal">
+                <p className="text-xs text-slate-500 font-sans max-w-sm mx-auto leading-normal">
                   完成发行中心流程后，您的 1人算力公司 Token 会出现在这里。
                 </p>
               </div>
@@ -733,19 +733,19 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                     {/* Grid details */}
                     <div className="grid grid-cols-2 gap-4 my-5 font-mono text-[11px] text-slate-400 border-t border-b border-white/5 py-4">
                       <div>
-                        <span className="text-[9px] text-slate-505 block">初始发行价</span>
+                        <span className="text-[9px] text-slate-500 block">初始发行价</span>
                         <span className="text-slate-200 font-bold text-xs mt-0.5 block">{token.initialPrice.toFixed(4)} U</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-505 block">目标支持池</span>
+                        <span className="text-[9px] text-slate-500 block">目标模拟支持池</span>
                         <span className="text-slate-200 font-bold text-xs mt-0.5 block">{token.targetPool.toLocaleString()} U</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-505 block">已支持金额</span>
+                        <span className="text-[9px] text-slate-500 block">已支持金额</span>
                         <span className="text-cyan-400 font-extrabold text-xs mt-0.5 block">{token.raisedUsdt.toFixed(2)} U</span>
                       </div>
                       <div>
-                        <span className="text-[9px] text-slate-505 block">锁仓 R1 押金</span>
+                        <span className="text-[9px] text-slate-500 block">锁仓 R1 押金</span>
                         <span className="text-slate-200 font-bold text-xs mt-0.5 block">{token.lockedR1} R1</span>
                       </div>
                     </div>
@@ -753,7 +753,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                     {/* Progress Bar */}
                     <div className="space-y-1.5">
                       <div className="flex justify-between text-[10px] font-mono">
-                        <span className="text-slate-505">支持募集进度</span>
+                        <span className="text-slate-500">支持募集进度</span>
                         <span className="text-cyan-400 font-bold">{token.progress.toFixed(1)}%</span>
                       </div>
                       <div className="w-full h-2 bg-slate-900 rounded-full overflow-hidden border border-white/5">
@@ -781,7 +781,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                         className={`py-2.5 text-xs font-black rounded-xl min-h-[44px] flex items-center justify-center transition-all cursor-pointer ${
                           token.status === "launching"
                             ? "bg-gradient-to-r from-cyan-500 to-blue-500 text-slate-950 shadow-[0_0_12px_rgba(6,182,212,0.15)] active:scale-95 hover:brightness-110"
-                            : "bg-slate-900 border border-white/5 text-slate-550 cursor-not-allowed"
+                            : "bg-slate-900 border border-white/5 text-slate-500 cursor-not-allowed"
                         }`}
                       >
                         模拟支持
@@ -886,7 +886,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                         onClick={() => handlePresetSupport(preset)}
                         className={`py-2 text-xs font-bold rounded-xl transition-all border min-h-[44px] flex items-center justify-center cursor-pointer ${
                           disabled 
-                            ? "bg-slate-950 border-white/5 text-slate-550 cursor-not-allowed"
+                            ? "bg-slate-950 border-white/5 text-slate-500 cursor-not-allowed"
                             : "bg-white/5 border-white/10 hover:bg-white/10 text-slate-200 active:scale-95"
                         }`}
                       >
@@ -956,7 +956,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
                 <span className="text-white font-bold">{selectedToken.initialPrice.toFixed(4)} USDT</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1.5">
-                <span>目标支持池:</span>
+                <span>目标模拟支持池:</span>
                 <span className="text-white font-bold">{selectedToken.targetPool.toLocaleString()} USDT</span>
               </div>
               <div className="flex justify-between border-b border-white/5 pb-1.5">
@@ -978,7 +978,7 @@ export const R1Exchange: React.FC<R1ExchangeProps> = ({
             </div>
 
             <div>
-              <span className="text-[10px] text-slate-550 font-bold block mb-1">影子项目简介</span>
+              <span className="text-[10px] text-slate-500 font-bold block mb-1">影子项目简介</span>
               <p className="text-xs text-slate-400 font-sans leading-relaxed bg-black/20 border border-white/[0.02] p-3 rounded-xl">
                 {selectedToken.description || "暂无项目简介说明。"}
               </p>

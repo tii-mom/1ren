@@ -25,7 +25,7 @@ export interface ActiveMiner {
   status: "running" | "decayed" | "stopped"; // decayed means efficiency dropped, need coolant
   accumulatedRewards: number;
   efficiency: number; // 1.0 down to 0.5 when decayed
-  isDemo?: boolean; // 7-day demo
+  isDemo?: boolean; // short demo miner
   hasWarnedDemo?: boolean;
 }
 
@@ -59,7 +59,7 @@ export interface UserStats {
   referrerName: string; // 上级推荐人 name
   coolantCount: number; // 冷却液 quantity
   buffActiveUntil: string | null; // ISO String for 1hr 2x buff
-  hasClaimedDemo: boolean; // Has claimed the 7-day free demo miner
+  hasClaimedDemo: boolean; // Has claimed the short demo miner
   directReferrals: number; // 直属活跃节点数
   totalReferrals: number;  // 团队级联节点数
 }
@@ -95,7 +95,7 @@ export interface UserIssuedToken {
   status: "launching" | "listed" | "closed";
   raisedUsdt: number;
   progress: number;
-  lockedR1: 100;
+  lockedR1: number;
   ownerLevel: string;
   createdAt: string;
 }
