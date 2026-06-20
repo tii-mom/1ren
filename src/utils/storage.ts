@@ -97,75 +97,228 @@ export const INITIAL_RECORDS: MiningRecord[] = [
   { id: "rec-3", timestamp: "2026-06-15T08:00:00Z", amount: 15.0, type: "mining", description: "基础设备日结算完成" }
 ];
 
-export const loadStats = (): UserStats => {
-  const data = localStorage.getItem("hashcube_user_stats");
-  if (!data) return INITIAL_STATS;
+export const STORAGE_KEYS = {
+  version: "r1_storage_version",
+  stats: "r1_user_stats",
+  miners: "r1_active_miners",
+  tasks: "r1_daily_tasks",
+  records: "r1_mining_records",
+  usdtBalance: "r1_usdt_balance",
+  streakCount: "r1_streak_count",
+  lastCheckInDate: "r1_last_check_in_date",
+  issuedTokens: "r1_user_issued_tokens"
+} as const;
+
+export const LEGACY_STORAGE_KEYS = {
+  stats: "hashcube_user_stats",
+  miners: "hashcube_active_miners",
+  tasks: "hashcube_daily_tasks",
+  records: "hashcube_mining_records",
+  usdtBalance: "hashcube_usdt_balance",
+  streakCount: "hashcube_streak_count",
+  lastCheckInDate: "hashcube_last_check_in_date"
+} as const;
+
+export const migrateLegacyStorage = (): void => {
   try {
-    const parsed = JSON.parse(data);
-    if (parsed && typeof parsed === "object" && parsed.r1Balance === undefined) {
-      parsed.r1Balance = 150.0;
-    }
-    return parsed;
-  } catch {
-    return INITIAL_STATS;
+    const newVersion = localStorage.getItem(STORAGE_KEYS.version);
+    if (newVersion) return; // already migrated
+
+    // Check if any legacy key exists, then copy
+    Object.keys(LEGACY_STORAGE_KEYS).forEach((k) => {
+      const key = k as keyof typeof LEGACY_STORAGE_KEYS;
+      const legacyKey = LEGACY_STORAGE_KEYS[key];
+      const newKey = STORAGE_KEYS[key];
+      const legacyValue = localStorage.getItem(legacyKey);
+      if (legacyValue !== null) {
+        localStorage.setItem(newKey, legacyValue);
+      }
+    });
+
+    // Write version
+    localStorage.setItem(STORAGE_KEYS.version, "1");
+  } catch (e) {
+    console.warn("Storage migration failed:", e);
   }
+};
+
+export const loadStats = (): UserStats => {
+  let data = localStorage.getItem(STORAGE_KEYS.stats);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === "object") {
+        if (parsed.r1Balance === undefined) {
+          parsed.r1Balance = 150.0;
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Error parsing new stats, trying legacy stats:", e);
+    }
+  }
+
+  // Fallback to legacy
+  data = localStorage.getItem(LEGACY_STORAGE_KEYS.stats);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      if (parsed && typeof parsed === "object") {
+        if (parsed.r1Balance === undefined) {
+          parsed.r1Balance = 150.0;
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Error parsing legacy stats:", e);
+    }
+  }
+
+  return INITIAL_STATS;
 };
 
 export const saveStats = (stats: UserStats) => {
-  localStorage.setItem("hashcube_user_stats", JSON.stringify(stats));
+  try {
+    localStorage.setItem(STORAGE_KEYS.stats, JSON.stringify(stats));
+  } catch (e) {
+    console.warn("Error saving stats:", e);
+  }
 };
 
 export const loadMiners = (): ActiveMiner[] => {
-  const data = localStorage.getItem("hashcube_active_miners");
-  if (!data) return [];
-  try {
-    return JSON.parse(data);
-  } catch {
-    return [];
+  let data = localStorage.getItem(STORAGE_KEYS.miners);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn("Error parsing new miners, trying legacy miners:", e);
+    }
   }
+
+  data = localStorage.getItem(LEGACY_STORAGE_KEYS.miners);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn("Error parsing legacy miners:", e);
+    }
+  }
+
+  return [];
 };
 
 export const saveMiners = (miners: ActiveMiner[]) => {
-  localStorage.setItem("hashcube_active_miners", JSON.stringify(miners));
+  try {
+    localStorage.setItem(STORAGE_KEYS.miners, JSON.stringify(miners));
+  } catch (e) {
+    console.warn("Error saving miners:", e);
+  }
 };
 
 export const loadTasks = (): TaskState => {
-  const data = localStorage.getItem("hashcube_daily_tasks");
-  if (!data) return INITIAL_TASKS;
-  try {
-    const parsed = JSON.parse(data) as TaskState;
-    // Check daily reset
-    const todayStr = new Date().toISOString().substring(0, 10);
-    if (parsed.lastCompletedDate !== todayStr) {
-      return {
-        watchAd: false,
-        likeContent: false,
-        shareMoments: false,
-        lastCompletedDate: todayStr
-      };
+  let data = localStorage.getItem(STORAGE_KEYS.tasks);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data) as TaskState;
+      if (parsed && typeof parsed === "object") {
+        const todayStr = new Date().toISOString().substring(0, 10);
+        if (parsed.lastCompletedDate !== todayStr) {
+          return {
+            watchAd: false,
+            likeContent: false,
+            shareMoments: false,
+            lastCompletedDate: todayStr
+          };
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Error parsing new tasks, trying legacy tasks:", e);
     }
-    return parsed;
-  } catch {
-    return INITIAL_TASKS;
   }
+
+  data = localStorage.getItem(LEGACY_STORAGE_KEYS.tasks);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data) as TaskState;
+      if (parsed && typeof parsed === "object") {
+        const todayStr = new Date().toISOString().substring(0, 10);
+        if (parsed.lastCompletedDate !== todayStr) {
+          return {
+            watchAd: false,
+            likeContent: false,
+            shareMoments: false,
+            lastCompletedDate: todayStr
+          };
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.warn("Error parsing legacy tasks:", e);
+    }
+  }
+
+  return INITIAL_TASKS;
 };
 
 export const saveTasks = (tasks: TaskState) => {
-  localStorage.setItem("hashcube_daily_tasks", JSON.stringify(tasks));
-};
-
-export const loadRecords = (): MiningRecord[] => {
-  const data = localStorage.getItem("hashcube_mining_records");
-  if (!data) return INITIAL_RECORDS;
   try {
-    return JSON.parse(data);
-  } catch {
-    return INITIAL_RECORDS;
+    localStorage.setItem(STORAGE_KEYS.tasks, JSON.stringify(tasks));
+  } catch (e) {
+    console.warn("Error saving tasks:", e);
   }
 };
 
+export const loadRecords = (): MiningRecord[] => {
+  let data = localStorage.getItem(STORAGE_KEYS.records);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn("Error parsing new records, trying legacy records:", e);
+    }
+  }
+
+  data = localStorage.getItem(LEGACY_STORAGE_KEYS.records);
+  if (data) {
+    try {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) return parsed;
+    } catch (e) {
+      console.warn("Error parsing legacy records:", e);
+    }
+  }
+
+  return INITIAL_RECORDS;
+};
+
 export const saveRecords = (records: MiningRecord[]) => {
-  localStorage.setItem("hashcube_mining_records", JSON.stringify(records));
+  try {
+    localStorage.setItem(STORAGE_KEYS.records, JSON.stringify(records));
+  } catch (e) {
+    console.warn("Error saving records:", e);
+  }
+};
+
+export const loadUsdtBalance = (): number => {
+  let data = localStorage.getItem(STORAGE_KEYS.usdtBalance);
+  if (!data) {
+    data = localStorage.getItem(LEGACY_STORAGE_KEYS.usdtBalance);
+  }
+  if (!data) return 500.0;
+  const parsed = parseFloat(data);
+  return isNaN(parsed) ? 500.0 : parsed;
+};
+
+export const saveUsdtBalance = (balance: number) => {
+  try {
+    localStorage.setItem(STORAGE_KEYS.usdtBalance, balance.toString());
+  } catch (e) {
+    console.warn("Error saving USDT balance:", e);
+  }
 };
 
 export const addRecord = (records: MiningRecord[], type: MiningRecord["type"], amount: number, description: string): MiningRecord[] => {
