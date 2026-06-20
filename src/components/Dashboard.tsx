@@ -355,9 +355,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="mt-6 relative z-10">
           <button
             onClick={() => setIsSellSheetOpen(true)}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-white font-black text-sm uppercase tracking-widest shadow-[0_4px_20px_rgba(6,182,212,0.4)] active:scale-98 transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
+            className="w-full py-4 rounded-2xl bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-white font-black text-sm uppercase tracking-widest shadow-[0_4px_20px_rgba(6,182,212,0.4)] active:scale-95 transition-all flex items-center justify-center gap-2 min-h-[44px] cursor-pointer"
           >
-            <Coins className="size-4.5 animate-pulse" />
+            <Coins className="size-4 animate-pulse" />
             一键出售 AI Token 变现 (Instant Sell)
           </button>
         </div>
@@ -545,7 +545,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {issuedConditions.percent < 100 && (
               <button
                 onClick={() => setCurrentTab("store")}
-                className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-xs font-black rounded-2xl min-h-[44px] shadow-[0_0_15px_rgba(16,185,129,0.25)] active:scale-98 transition-all flex items-center justify-center cursor-pointer"
+                className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 text-xs font-black rounded-2xl min-h-[44px] shadow-[0_0_15px_rgba(16,185,129,0.25)] active:scale-95 transition-all flex items-center justify-center cursor-pointer"
               >
                 去并网部署设备
               </button>
@@ -559,7 +559,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-black/40 border border-white/5 p-3 rounded-2xl font-mono text-center">
-                <span className="text-[8px] text-slate-500 block font-bold uppercase tracking-wider">今日官方回收池剩余额度</span>
+                <span className="text-[8px] text-slate-500 block font-bold uppercase tracking-wider">今日官方模拟回收池剩余额度</span>
                 <span className="text-base font-bold text-amber-400 block mt-1.5 text-glow-gold animate-pulse">
                   {recoveryPool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-[10px] text-slate-400">U</span>
                 </span>
@@ -583,7 +583,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {/* Scrolling recent trades FOMO flow */}
             <div className="bg-black/45 border border-white/5 rounded-2xl p-4">
               <span className="text-[9px] text-[#22d3ee] font-mono font-bold uppercase tracking-widest block mb-2.5">
-                ● 交易市场报告 (SPOT EXECUTIONS)
+                ● 模拟交易市场报告 (SIMULATED SPOT EXECUTIONS)
               </span>
               <div className="h-[96px] overflow-hidden relative">
                 {/* Overlay masks for gradient scroll */}
@@ -740,7 +740,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               
               <div className="flex justify-between items-center">
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-1.5 font-sans">
-                  <Coins className="text-amber-400 size-4.5" />
+                  <Coins className="text-amber-400 size-4" />
                   一键出售 AI Token 变现
                 </h3>
                 <button
@@ -811,7 +811,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               {/* Execution button */}
               <button
                 onClick={handleQuickSellSubmit}
-                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:brightness-110 active:scale-98 transition-all flex items-center justify-center min-h-[44px] cursor-pointer"
+                className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:brightness-110 active:scale-95 transition-all flex items-center justify-center min-h-[44px] cursor-pointer"
               >
                 确认极速卖出
               </button>
@@ -850,7 +850,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </button>
                 <button
                   onClick={executeAllSell}
-                  className="flex-1 py-3 bg-red-500 hover:bg-red-650 text-white font-black rounded-xl text-xs shadow-[0_0_15px_rgba(239,68,68,0.25)] active:scale-95 transition-all min-h-[44px] cursor-pointer"
+                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl text-xs shadow-[0_0_15px_rgba(239,68,68,0.25)] active:scale-95 transition-all min-h-[44px] cursor-pointer"
                 >
                   确认清仓
                 </button>

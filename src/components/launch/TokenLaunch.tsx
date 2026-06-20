@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { UserStats, ActiveMiner, UserIssuedToken } from "../../types";
+import { UserStats, ActiveMiner, UserIssuedToken, UserLevel } from "../../types";
 import { 
   Coins, Cpu, Award, Zap, AlertTriangle, ShieldCheck, 
   HelpCircle, Sparkles, CheckCircle, ArrowRight, Loader2
@@ -50,7 +50,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
   }, []);
 
   // Check conditions
-  const condLevel = useMemo(() => stats.level !== "S0 自有设备节点" && stats.level !== ("ZERO" as any), [stats.level]);
+  const condLevel = useMemo(() => stats.level !== UserLevel.ZERO, [stats.level]);
   const condOutput = useMemo(() => stats.accumulatedFragments >= 500.0, [stats.accumulatedFragments]);
   const condDevices = useMemo(() => activeMiners.filter(m => m.status !== "stopped").length >= 1, [activeMiners]);
   const condStake = useMemo(() => (stats.r1Balance || 0) >= 100.0, [stats.r1Balance]);
@@ -245,7 +245,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
               <button
                 type="button"
                 onClick={onSatisfyConditions}
-                className="w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-black rounded-xl cursor-pointer min-h-[38px] active:scale-98 transition-all flex items-center justify-center gap-1"
+                className="w-full py-2.5 bg-yellow-500 hover:bg-yellow-600 text-slate-950 text-xs font-black rounded-xl cursor-pointer min-h-[38px] active:scale-95 transition-all flex items-center justify-center gap-1"
               >
                 一键满足 4 项资格门槛
               </button>
@@ -284,7 +284,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
           {metCount < 4 && (
             <button
               onClick={() => setCurrentTab("store")}
-              className="w-full py-3.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl min-h-[44px] shadow-md hover:brightness-110 active:scale-98 transition-all flex items-center justify-center gap-1.5 mt-5 cursor-pointer"
+              className="w-full py-3.5 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 text-white font-black text-xs uppercase tracking-wider rounded-2xl min-h-[44px] shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1.5 mt-5 cursor-pointer"
             >
               前往设备大厅部署矿机
               <ArrowRight className="size-4" />
@@ -424,7 +424,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
               className={`w-full py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all min-h-[44px] cursor-pointer flex items-center justify-center gap-2 ${
                 isDeploying
                   ? "bg-white/5 text-slate-500 cursor-not-allowed border border-white/5"
-                  : "bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:brightness-110 active:scale-98"
+                  : "bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:brightness-110 active:scale-95"
               }`}
             >
               {isDeploying ? "部署发行中..." : "一键申请并部署发行 (消耗 100 R1 押金)"}
@@ -463,7 +463,7 @@ export const TokenLaunch: React.FC<TokenLaunchProps> = ({
                     <span className="text-cyan-400 font-bold block mt-0.5">{token.initialPrice.toFixed(4)} U</span>
                   </div>
                   <div>
-                    <span>支持池目标</span>
+                    <span>模拟支持池目标</span>
                     <span className="text-white font-bold block mt-0.5">{token.targetPool.toLocaleString()} U</span>
                   </div>
                 </div>

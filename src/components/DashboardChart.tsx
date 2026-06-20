@@ -41,7 +41,7 @@ export const DashboardChart: React.FC<DashboardChartProps> = ({ totalHashpower }
         <div className="space-y-1">
           <span className="text-[9px] text-cyan-400 font-mono font-extrabold tracking-widest block uppercase">PERFORMANCE TELEMETRY REPORT</span>
           <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <Cpu className="text-cyan-400 size-4.5 animate-pulse" />
+            <Cpu className="text-cyan-400 size-4 animate-pulse" />
             7 日总算力变化
           </h3>
           <p className="text-xs text-slate-400 font-sans">

@@ -76,7 +76,7 @@ export const INITIAL_STATS: UserStats = {
   totalSynthesized: 0,
   accumulatedFragments: 32.54,
   inviteCode: "CUBE888",
-  referrerName: "团队节点-老詹",
+  referrerName: "初始推荐节点",
   coolantCount: 1, // Start with 1 free coolant
   buffActiveUntil: null,
   hasClaimedDemo: false,

@@ -648,7 +648,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                 <span className="inline-block bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-widest mb-1.5">
                   自有设备体验 // FREE DEVICE NODE
                 </span>
-                <h3 className="text-sm font-bold text-white">免费激活 7 天手机共享算力体验</h3>
+                <h3 className="text-sm font-bold text-white">免费激活 3 分钟手机共享算力体验</h3>
                 <p className="text-xs text-slate-400 mt-1 font-medium font-sans max-w-2xl leading-relaxed">
                   不购买设备也可以体验。系统会为您的自有设备创建体验节点，用于产出少量 AI Token。
                 </p>
@@ -672,7 +672,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               <div className="space-y-1">
                 <span className="text-[9px] text-violet-400 font-mono font-extrabold tracking-widest block uppercase">ACHIEVEMENT & LEVEL SEQUENCE MEDALS</span>
                 <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                  <Award className="text-yellow-400 size-4.5" />
+                  <Award className="text-yellow-400 size-4" />
                   节点成长成就徽章系统 (Node Milestones & Badges)
                 </h3>
                 <p className="text-xs text-slate-400 font-sans">
@@ -771,7 +771,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                                 <span>部署并网规格：<b className="text-white">{miner.cost} USDT</b></span>
                                 <span>运行效率：<b className="text-cyan-400 font-bold">{(miner.efficiency * 100).toFixed(0)}%</b></span>
                                 {isDemo ? (
-                                  <span className="text-indigo-400 font-bold">效期：7 天免费试用体验</span>
+                                  <span className="text-indigo-400 font-bold">效期：3 分钟体验节点</span>
                                 ) : (
                                   <span>并网截止时间：<b className="text-slate-300">{formatDate(miner.expiresAt)}</b></span>
                                 )}
@@ -1186,7 +1186,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
             <div className="flex flex-col lg:flex-row gap-6 justify-between items-start lg:items-center border-b border-white/5 pb-5">
               <div className="space-y-1.5 flex-1">
                 <div className="flex items-center gap-2">
-                  <BarChart3 className="text-cyan-400 size-4.5 animate-pulse" />
+                  <BarChart3 className="text-cyan-400 size-4 animate-pulse" />
                   <h3 className="text-xs font-black uppercase tracking-widest text-[#22d3ee]">
                     公司账面财务与经营利润总表 (Founder Capital Ledger)
                   </h3>
