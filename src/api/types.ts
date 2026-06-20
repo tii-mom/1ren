@@ -15,7 +15,8 @@ export interface UserResponse {
   id: string;
   tgId: number | null;
   inviteCode: string;
-  referrerName: string;
+  referrerId: string | null;
+  referrerName?: string;
   createdAt: string;
 }
 
