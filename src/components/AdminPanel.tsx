@@ -5,7 +5,8 @@ import {
 } from "lucide-react";
 import { 
   getAdminDevices, createAdminDevice, updateAdminDevice, updateAdminDeviceStatus,
-  getAdminConfig, updateAdminConfig, getAdminEvents, AdminDeviceItem, AdminEventItem 
+  getAdminConfig, updateAdminConfig, getAdminEvents, AdminDeviceItem, AdminEventItem,
+  API_BASE_URL
 } from "../api/admin";
 
 interface AdminPanelProps {
@@ -253,7 +254,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onClose }) => {
 
   const handleTriggerPublicCatalogRefresh = async () => {
     try {
-      const res = await fetch("http://localhost:8787/api/devices/catalog");
+      const res = await fetch(`${API_BASE_URL}/api/devices/catalog`);
       if (res.ok) {
         triggerNotification("刷新完成", "已成功刷新前台公开设备目录 API，数据状态已同步。", "success");
         refreshDevices();
