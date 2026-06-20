@@ -372,7 +372,7 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
                 <span className="text-[9px] uppercase text-slate-500 font-bold block">API 模拟消耗支出</span>
                 <div className="text-amber-400 font-black text-base">${(stats.totalSynthesized * 1.2).toFixed(2)} USDT</div>
                 <p className="text-[8.5px] text-slate-500 leading-normal font-sans">
-                  用户生成 API 凭证折合的真实模型 API 调用扣费折算。
+                  用户生成 API 凭证折合的未来模型 API 调用成本估算。
                 </p>
               </div>
             </div>
@@ -630,7 +630,7 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
                 <span>导出30天明细</span>
               </button>
               <span className="text-[10px] text-slate-500 font-mono font-bold tracking-wider uppercase">
-                REAL-TIME LOG
+                SIMULATED LOG
               </span>
             </div>
           </div>
@@ -782,6 +782,42 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
                         <span className="text-slate-500 font-sans">后端租赁实例数量:</span>
                         <span className="text-white font-bold">{backendDevices.length} 台</span>
                       </div>
+
+                      {/* Check if demo node is active */}
+                      {(() => {
+                        const demoOrder = backendDevices.find(d => d.orderType === "DEMO" && d.status === "ACTIVE");
+                        if (demoOrder) {
+                          const expiresAtMs = new Date(demoOrder.expiresAt).getTime();
+                          const nowMs = Date.now();
+                          const isExpired = expiresAtMs <= nowMs;
+                          return (
+                            <div className="border-t border-white/5 pt-2 space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-slate-500 font-sans">3分钟体验节点:</span>
+                                <span className={isExpired ? "text-red-400 font-bold" : "text-green-400 font-bold animate-pulse"}>
+                                  {isExpired ? "已过期满断电" : "已激活正常并网"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500 font-sans">到期时间:</span>
+                                <span className="text-slate-300 text-[9px]">
+                                  {new Date(demoOrder.expiresAt).toLocaleTimeString()}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="border-t border-white/5 pt-2 flex justify-between">
+                              <span className="text-slate-500 font-sans">3分钟体验节点:</span>
+                              <span className="text-slate-500">未激活</span>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                    <div className="bg-violet-950/20 border border-violet-500/20 text-violet-400 p-2 rounded-xl text-[10px] leading-relaxed font-sans mt-2">
+                      ⚠️ 只读后端测试设备状态，不影响本地 Sandbox 运行的矿机。
                     </div>
                   </div>
                 </div>
@@ -951,7 +987,7 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
                   <textarea
                     readOnly
                     className="w-full h-44 sm:h-60 bg-black/40 border border-white/5 rounded-xl p-3 text-[10px] sm:text-[11px] font-mono text-slate-300 resize-none focus:outline-none focus:border-cyan-500/50"
-                    value={`日期,事件类型,AI Token产出,模拟运行设备\n`}
+                    value={getSimulated30DaysText()}
                   />
                 </div>
               )}
