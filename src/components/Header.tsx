@@ -179,7 +179,7 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
           >
             <User stroke={currentTab === "my" ? "url(#gradient-cyan-blue)" : "currentColor"} className={`size-4 ${currentTab === "my" ? "icon-glow-cyan" : ""}`} />
-            我的后台
+            我的公司
           </button>
         </nav>
       </div>
