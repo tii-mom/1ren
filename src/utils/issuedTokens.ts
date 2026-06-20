@@ -1,6 +1,7 @@
 import { UserIssuedToken } from "../types";
+import { STORAGE_KEYS } from "./storage";
 
-const KEY = "r1_user_issued_tokens";
+const KEY = STORAGE_KEYS.issuedTokens;
 
 export function loadIssuedTokens(): UserIssuedToken[] {
   try {

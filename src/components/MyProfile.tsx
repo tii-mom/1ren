@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { UserStats, ActiveMiner, MiningRecord, UserLevel } from "../types";
 import { MOCK_REFERRALS } from "../utils/storage";
+import { loadIssuedTokens } from "../utils/issuedTokens";
 import { 
   Award, Key, Copy, Check, Users, History, Cpu, Droplet, Sparkles, Plus, Layers, Lock, Settings, BatteryCharging, TrendingUp, Zap, Download, BarChart3,
   Coins, RefreshCw, AlertTriangle, ShieldCheck
@@ -54,6 +55,7 @@ interface MyProfileProps {
   onUpdateSimulatedStats?: (updater: (prev: UserStats) => UserStats) => void;
   onForceAgeMiner?: () => void;
   onRedeemItem?: (item: any) => void;
+  onResetDemoData: () => void;
 }
 
 export const MyProfile: React.FC<MyProfileProps> = ({
@@ -66,7 +68,8 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   onClaimDemoMiner,
   onUpdateSimulatedStats,
   onForceAgeMiner,
-  onRedeemItem
+  onRedeemItem,
+  onResetDemoData
 }) => {
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [copiedRLink, setCopiedRLink] = useState(false);
@@ -77,18 +80,10 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   const [exportPhase, setExportPhase] = useState<"idle" | "pairing" | "checking" | "broadcasting" | "solidifying" | "ready">("ready");
   const [copiedExport, setCopiedExport] = useState(false);
   const [selectedBadge, setSelectedBadge] = useState<any | null>(null);
+  const [showConfirmReset, setShowConfirmReset] = useState(false);
 
   const userIssuedTokens = useMemo(() => {
-    const saved = localStorage.getItem("r1_user_issued_tokens");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) return parsed;
-      } catch (e) {
-        console.warn("Error parsing user issued tokens in MyProfile:", e);
-      }
-    }
-    return [];
+    return loadIssuedTokens();
   }, [subTab]); // reload when subTab switches or renders
 
   const handleOpenExport = () => {
@@ -1247,6 +1242,56 @@ export const MyProfile: React.FC<MyProfileProps> = ({
               </div>
             </div>
 
+          </div>
+
+          {/* 系统与数据管理 */}
+          <div className="bg-gradient-to-br from-[#1a0f0f] to-[#0d0707] border border-red-500/20 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/[0.02] rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="cyber-icon-wrapper p-1.5 text-red-400 border-red-500/20">
+                <AlertTriangle className="size-4 text-red-400 icon-glow-red animate-pulse" />
+              </span>
+              <h3 className="text-xs font-black uppercase tracking-widest text-red-400 font-sans">
+                系统与数据管理 (System & Data Management)
+              </h3>
+            </div>
+            <p className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
+              重置所有本地缓存、设备并网数据、交易明细、USDT 余额和签到记录。此操作不可逆，请谨慎操作。
+            </p>
+            
+            <div className="flex items-center gap-4">
+              {!showConfirmReset ? (
+                <button
+                  onClick={() => setShowConfirmReset(true)}
+                  className="px-5 py-3 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500 hover:text-slate-950 text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-2 font-sans"
+                >
+                  <RefreshCw className="size-3.5" /> 一键重置演示数据
+                </button>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 w-full animate-fade-in font-sans">
+                  <span className="text-xs text-red-400 font-semibold">
+                    ⚠️ 确认要重置所有演示数据吗？（所有的本地资产、设备及代币发行记录都将被永久清空）
+                  </span>
+                  <div className="flex gap-2 shrink-0">
+                    <button
+                      onClick={() => {
+                        onResetDemoData();
+                        setShowConfirmReset(false);
+                      }}
+                      className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold transition-all cursor-pointer active:scale-95"
+                    >
+                      确定重置
+                    </button>
+                    <button
+                      onClick={() => setShowConfirmReset(false)}
+                      className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 text-xs font-bold transition-all cursor-pointer active:scale-95"
+                    >
+                      取消
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
         </div>

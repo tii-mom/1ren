@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Calendar, CalendarCheck2, Fuel, Sparkles, Zap, Award, CheckCircle } from "lucide-react";
+import { STORAGE_KEYS, LEGACY_STORAGE_KEYS } from "../utils/storage";
 
 interface LoginStreakProps {
   onCheckInCompleted: (rewardShards: number, addCoolant: boolean, description: string) => void;
@@ -29,8 +30,14 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
 
   // Load state on mount
   useEffect(() => {
-    const savedStreak = localStorage.getItem("hashcube_streak_count");
-    const savedLastDate = localStorage.getItem("hashcube_last_check_in_date") || "";
+    let savedStreak = localStorage.getItem(STORAGE_KEYS.streakCount);
+    if (!savedStreak) {
+      savedStreak = localStorage.getItem(LEGACY_STORAGE_KEYS.streakCount);
+    }
+    let savedLastDate = localStorage.getItem(STORAGE_KEYS.lastCheckInDate);
+    if (!savedLastDate) {
+      savedLastDate = localStorage.getItem(LEGACY_STORAGE_KEYS.lastCheckInDate) || "";
+    }
     
     const parsedStreak = savedStreak ? parseInt(savedStreak, 10) : 0;
     setStreak(parsedStreak);
@@ -49,7 +56,7 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
       // If of difference is greater than 1 day, reset consecutive login streak
       if (diffDays > 1) {
         setStreak(0);
-        localStorage.setItem("hashcube_streak_count", "0");
+        localStorage.setItem(STORAGE_KEYS.streakCount, "0");
       }
     }
   }, []);
@@ -74,8 +81,8 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
     setLastCheckIn(todayStr);
     setHasCheckedInToday(true);
 
-    localStorage.setItem("hashcube_streak_count", nextStreak.toString());
-    localStorage.setItem("hashcube_last_check_in_date", todayStr);
+    localStorage.setItem(STORAGE_KEYS.streakCount, nextStreak.toString());
+    localStorage.setItem(STORAGE_KEYS.lastCheckInDate, todayStr);
 
     const desc = `每日签到打卡 (第 ${nextStreak} 天连签), 获 ${rewardShards} Token 利润${isDay7 ? " +1瓶纳米防爆液氮" : ""}`;
     onCheckInCompleted(rewardShards, isDay7, desc);
@@ -88,7 +95,7 @@ export const LoginStreak: React.FC<LoginStreakProps> = ({ onCheckInCompleted }) 
     yesterday.setDate(yesterday.getDate() - 1);
     const yesterdayStr = yesterday.toISOString().substring(0, 10);
 
-    localStorage.setItem("hashcube_last_check_in_date", yesterdayStr);
+    localStorage.setItem(STORAGE_KEYS.lastCheckInDate, yesterdayStr);
     setLastCheckIn(yesterdayStr);
     setHasCheckedInToday(false);
   };

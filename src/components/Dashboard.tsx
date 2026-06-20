@@ -164,16 +164,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, [stats.level, stats.accumulatedFragments, activeMiners, stats.r1Balance]);
 
   const hasIssuedToken = useMemo(() => {
-    try {
-      const saved = localStorage.getItem("r1_user_issued_tokens");
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        return Array.isArray(parsed) && parsed.length >= 1;
-      }
-    } catch (e) {
-      console.warn(e);
-    }
-    return false;
+    const tokens = loadIssuedTokens();
+    return tokens.length >= 1;
   }, [stats]);
 
   const steps = useMemo(() => {

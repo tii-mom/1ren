@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { UserStats, UserLevel, ActiveMiner, TaskState, MiningRecord, StoreItem, MinerTemplate, UserIssuedToken } from "./types";
 import { 
   loadStats, saveStats, loadMiners, saveMiners, loadTasks, saveTasks, loadRecords, saveRecords, addRecord, MOCK_STORE_ITEMS, MOCK_REFERRALS,
-  INITIAL_STATS, INITIAL_TASKS
+  INITIAL_STATS, INITIAL_TASKS, INITIAL_RECORDS, STORAGE_KEYS, LEGACY_STORAGE_KEYS, migrateLegacyStorage, loadUsdtBalance, saveUsdtBalance
 } from "./utils/storage";
 import { Header } from "./components/Header";
 import { Dashboard } from "./components/Dashboard";
@@ -157,21 +157,20 @@ export default function App() {
   // Initialize
   useEffect(() => {
     try {
+      // First run storage migration
+      migrateLegacyStorage();
+
       const loadedS = loadStats();
       const loadedM = loadMiners();
       const loadedT = loadTasks();
       const loadedR = loadRecords();
+      const loadedUsdt = loadUsdtBalance();
       
       setStats(loadedS ? { ...INITIAL_STATS, ...loadedS } : INITIAL_STATS);
       setActiveMiners(Array.isArray(loadedM) ? loadedM : []);
       setTasks(loadedT || INITIAL_TASKS);
       setRecords(Array.isArray(loadedR) ? loadedR : []);
-
-      const savedUsdt = localStorage.getItem("hashcube_usdt_balance");
-      if (savedUsdt) {
-        const parsed = parseFloat(savedUsdt);
-        setUsdtBalance(isNaN(parsed) ? 500.0 : parsed);
-      }
+      setUsdtBalance(loadedUsdt);
     } catch (e) {
       console.error("Critical storage load failed, restoring to defaults:", e);
       setStats(INITIAL_STATS);
@@ -211,7 +210,7 @@ export default function App() {
 
   useEffect(() => {
     try {
-      localStorage.setItem("hashcube_usdt_balance", usdtBalance.toString());
+      saveUsdtBalance(usdtBalance);
     } catch (e) {
       console.warn("Could not save USDT balance to storage:", e);
     }
@@ -545,6 +544,37 @@ export default function App() {
     );
   };
 
+  const handleResetDemoData = () => {
+    // 1. Clear all localStorage keys in STORAGE_KEYS and LEGACY_STORAGE_KEYS
+    try {
+      Object.values(STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+      });
+      Object.values(LEGACY_STORAGE_KEYS).forEach(key => {
+        localStorage.removeItem(key);
+      });
+    } catch (e) {
+      console.warn("Failed to clear localStorage keys during reset:", e);
+    }
+
+    // 2. Clear user issued tokens
+    saveIssuedTokens([]);
+
+    // 3. Reset react state
+    setStats(INITIAL_STATS);
+    setTasks(INITIAL_TASKS);
+    setRecords(INITIAL_RECORDS);
+    setActiveMiners([]);
+    setUsdtBalance(500.0);
+
+    // 4. Show success notification
+    triggerNotification(
+      "数据重置成功",
+      "所有本地数据和旧版缓存已彻底清空，已恢复为全新初始状态。",
+      "success"
+    );
+  };
+
   const handleLeaseMiner = (template: MinerTemplate) => {
     if (usdtBalance < template.cost) {
       triggerNotification(
@@ -696,17 +726,9 @@ export default function App() {
 
     addRecordLog("exchange", 100, `[发行中心] 质押锁仓 100 R1 成功发行影子 Token [${tokenData.symbol}]`);
 
-    const saved = localStorage.getItem("r1_user_issued_tokens");
-    let currentTokens = [];
-    if (saved) {
-      try {
-        currentTokens = JSON.parse(saved);
-      } catch (e) {
-        console.warn("Error parsing existing issued tokens:", e);
-      }
-    }
+    const currentTokens = loadIssuedTokens();
     const updatedTokens = [...currentTokens, tokenData];
-    localStorage.setItem("r1_user_issued_tokens", JSON.stringify(updatedTokens));
+    saveIssuedTokens(updatedTokens);
 
     triggerNotification(
       "企业 Token 发行成功",
@@ -882,6 +904,7 @@ export default function App() {
                   onClaimDemoMiner={handleClaimDemoMiner}
                   onUpdateSimulatedStats={(updater) => setStats(updater)}
                   onRedeemItem={handleRedeemItem}
+                  onResetDemoData={handleResetDemoData}
                   onForceAgeMiner={() => {
                     setActiveMiners((prev) => {
                       if (prev.length === 0) return prev;
