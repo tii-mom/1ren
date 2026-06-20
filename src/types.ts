@@ -72,6 +72,10 @@ export interface MinerTemplate {
   baseYieldRange: [number, number]; // [min, max] e.g. [0.008, 0.012]
   benefits: string[];
   stockToday: number;
+  refHardwareName?: string;
+  refSpecDescription?: string;
+  marketPriceRange?: string;
+  apiScenarios?: string;
 }
 
 export interface StoreItem {
