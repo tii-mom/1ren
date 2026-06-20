@@ -4,11 +4,12 @@ import { MOCK_REFERRALS } from "../utils/storage";
 import { loadIssuedTokens } from "../utils/issuedTokens";
 import { 
   Award, Key, Copy, Check, Users, History, Cpu, Droplet, Sparkles, Plus, Layers, Lock, Settings, BatteryCharging, TrendingUp, Zap, Download, BarChart3,
-  Coins, RefreshCw, AlertTriangle, ShieldCheck
+  Coins, RefreshCw, AlertTriangle, ShieldCheck, X
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ResonanceTower } from "./ResonanceTower";
 import { ItemStore } from "./ItemStore";
+import { UserResponse, AssetsResponse } from "../api/types";
 
 export const renderBadgeIcon = (badgeId: string, className = "size-8", isActive = true) => {
   const stroke = isActive ? (
@@ -56,6 +57,17 @@ interface MyProfileProps {
   onForceAgeMiner?: () => void;
   onRedeemItem?: (item: any) => void;
   onResetDemoData: () => void;
+
+  // Backend connection props (PR-3D)
+  backendConnected: boolean;
+  backendUser: UserResponse | null;
+  backendAssets: AssetsResponse | null;
+  backendError: string | null;
+  backendLoading: boolean;
+  onConnectBackend: (referrerCode?: string) => Promise<void>;
+  onRefreshBackend: () => Promise<void>;
+  onDisconnectBackend: () => void;
+  onClearBackendError: () => void;
 }
 
 export const MyProfile: React.FC<MyProfileProps> = ({
@@ -69,7 +81,18 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   onUpdateSimulatedStats,
   onForceAgeMiner,
   onRedeemItem,
-  onResetDemoData
+  onResetDemoData,
+
+  // Backend connection props (PR-3D)
+  backendConnected,
+  backendUser,
+  backendAssets,
+  backendError,
+  backendLoading,
+  onConnectBackend,
+  onRefreshBackend,
+  onDisconnectBackend,
+  onClearBackendError
 }) => {
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [copiedRLink, setCopiedRLink] = useState(false);
@@ -956,6 +979,150 @@ export const MyProfile: React.FC<MyProfileProps> = ({
       {subTab === "settings" && (
         <div className="space-y-6 animate-fade-in">
           
+          {/* 后端测试账本连接 (Backend Connection Panel) */}
+          <div className="bg-gradient-to-br from-[#0e0a1a] to-[#06040d] border border-violet-500/20 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-violet-500/[0.03] rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="cyber-icon-wrapper p-1.5 text-violet-400 border-violet-500/20">
+                <RefreshCw className="size-4 animate-spin icon-glow-purple" style={{ animationDuration: backendLoading ? "2s" : "0s" }} />
+              </span>
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#a78bfa]">
+                后端测试账本连接 (Backend Connection)
+              </h3>
+            </div>
+
+            <p className="text-xs text-slate-400 font-sans leading-relaxed mb-4">
+              连接本地 D1 Worker 后端测试账本，实现匿名会话与资产初始化落库的端到端联调测试。
+            </p>
+
+            {/* Status display */}
+            <div className="space-y-3.5 mb-5">
+              {!backendConnected ? (
+                <div className="bg-black/35 border border-white/5 rounded-2xl p-4 space-y-2">
+                  <div className="flex items-center gap-2 text-slate-400 text-xs font-bold">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-600 animate-pulse" />
+                    未连接后端账本，本地 Sandbox 正常运行
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    前端数据（如挖矿效率、R1 交易、影子 Token）均来自本地隔离沙箱。
+                  </p>
+                </div>
+              ) : (
+                <div className="bg-black/35 border border-white/5 rounded-2xl p-4 space-y-3 font-mono">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-2">
+                    <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                      已连接后端测试账本
+                    </div>
+                    <span className="text-[9px] text-slate-500 uppercase tracking-widest bg-violet-500/10 border border-violet-500/20 px-1.5 py-0.5 rounded">
+                      CONNECTED
+                    </span>
+                  </div>
+
+                  {backendUser && (
+                    <div className="space-y-1 text-[11px] text-slate-400">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">USER ID:</span>
+                        <span className="text-slate-200 select-all">{backendUser.id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-500">INVITE CODE:</span>
+                        <span className="text-slate-200">{backendUser.inviteCode}</span>
+                      </div>
+                      {backendUser.referrerId && (
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">REFERRER ID:</span>
+                          <span className="text-slate-200">{backendUser.referrerId}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {backendAssets && (
+                    <div className="border-t border-white/5 pt-2 space-y-1.5 font-mono">
+                      <span className="text-[9px] text-slate-500 uppercase block tracking-wider font-bold">后端资产只读快照 (Read-Only Balance)</span>
+                      <div className="grid grid-cols-2 gap-2 text-[10px]">
+                        <div className="bg-slate-900/40 p-2 rounded border border-white/5 flex justify-between">
+                          <span className="text-slate-500 font-sans">USDT:</span>
+                          <span className="text-white font-bold">${backendAssets.usdt.toFixed(2)}</span>
+                        </div>
+                        <div className="bg-slate-900/40 p-2 rounded border border-white/5 flex justify-between">
+                          <span className="text-slate-500 font-sans">R1:</span>
+                          <span className="text-white font-bold">{backendAssets.r1.toFixed(2)}</span>
+                        </div>
+                        <div className="bg-slate-900/40 p-2 rounded border border-white/5 flex justify-between col-span-2">
+                          <span className="text-slate-500 font-sans">AI Token:</span>
+                          <span className="text-white font-bold">{backendAssets.aiToken.toFixed(4)} AI</span>
+                        </div>
+                        <div className="bg-slate-900/40 p-2 rounded border border-white/5 flex justify-between">
+                          <span className="text-slate-500 font-sans">Shards:</span>
+                          <span className="text-white font-bold">{backendAssets.shards.toFixed(2)}</span>
+                        </div>
+                        <div className="bg-slate-900/40 p-2 rounded border border-white/5 flex justify-between">
+                          <span className="text-slate-500 font-sans">Coolant:</span>
+                          <span className="text-white font-bold">{backendAssets.coolantCount}</span>
+                        </div>
+                        <div className="bg-slate-900/40 p-2 rounded border border-white/5 flex justify-between col-span-2">
+                          <span className="text-slate-500 font-sans">Crystals:</span>
+                          <span className="text-white font-bold">{backendAssets.hashCrystals}</span>
+                        </div>
+                      </div>
+                      <div className="bg-violet-950/20 border border-violet-500/20 text-violet-400 p-2 rounded-xl text-[10px] leading-relaxed font-sans mt-2">
+                        ⚠️ 只读后端测试账本，不影响本地演示资产。
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Error display */}
+              {backendError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-xs px-4 py-3 rounded-2xl flex flex-col gap-2 relative font-sans">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    <span className="font-semibold">{backendError}</span>
+                  </div>
+                  <button 
+                    onClick={onClearBackendError}
+                    className="absolute top-2 right-2 p-1 text-slate-500 hover:text-slate-300 rounded cursor-pointer"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-wrap gap-2.5">
+              {!backendConnected ? (
+                <button
+                  onClick={() => onConnectBackend(stats.inviteCode)}
+                  disabled={backendLoading}
+                  className="w-full py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-600 hover:brightness-110 active:scale-95 text-white text-xs font-black tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {backendLoading ? "正在连接测试账本..." : "连接后端测试账本"}
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={onRefreshBackend}
+                    disabled={backendLoading}
+                    className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 active:scale-95 text-slate-200 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className="size-3.5 animate-spin" style={{ animationDuration: backendLoading ? "2s" : "0s" }} /> 刷新后端资产
+                  </button>
+                  <button
+                    onClick={onDisconnectBackend}
+                    disabled={backendLoading}
+                    className="px-4 py-2.5 rounded-xl bg-red-950/30 border border-red-500/20 hover:bg-red-950/60 active:scale-95 text-red-400 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    断开连接
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Recovery and Dev consoles */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             

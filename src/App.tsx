@@ -14,10 +14,14 @@ import { BottomNavigation } from "./components/BottomNavigation";
 import { Info, X, Zap, CheckCircle2, ShieldCheck, Heart, AlertTriangle, TrendingUp, Coins } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { loadIssuedTokens, saveIssuedTokens, updateIssuedToken } from "./utils/issuedTokens";
+import { useBackendConnection } from "./hooks/useBackendConnection";
 
 export default function App() {
   // Navigation
   const [currentTab, setCurrentTab] = useState<string>("home");
+
+  // Backend Connection (PR-3D)
+  const backendConn = useBackendConnection();
 
   // Core Persisted States
   const [stats, setStats] = useState<UserStats>(INITIAL_STATS);
@@ -986,7 +990,7 @@ export default function App() {
               )}
 
 
-              {currentTab === "my" && (
+               {currentTab === "my" && (
                 <MyProfile
                   stats={stats}
                   activeMiners={activeMiners}
@@ -999,6 +1003,15 @@ export default function App() {
                   onUpdateSimulatedStats={(updater) => setStats(updater)}
                   onRedeemItem={handleRedeemItem}
                   onResetDemoData={handleResetDemoData}
+                  backendConnected={backendConn.backendConnected}
+                  backendUser={backendConn.backendUser}
+                  backendAssets={backendConn.backendAssets}
+                  backendError={backendConn.backendError}
+                  backendLoading={backendConn.backendLoading}
+                  onConnectBackend={backendConn.connectBackend}
+                  onRefreshBackend={backendConn.refreshBackend}
+                  onDisconnectBackend={backendConn.disconnectBackend}
+                  onClearBackendError={backendConn.clearBackendError}
                   onForceAgeMiner={() => {
                     setActiveMiners((prev) => {
                       if (prev.length === 0) return prev;
