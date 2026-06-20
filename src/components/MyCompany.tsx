@@ -4,12 +4,13 @@ import { MOCK_REFERRALS } from "../utils/storage";
 import { loadIssuedTokens } from "../utils/issuedTokens";
 import { 
   Award, Key, Copy, Check, Users, History, Cpu, Droplet, Sparkles, Plus, Layers, Lock, Settings, BatteryCharging, TrendingUp, Zap, Download, BarChart3,
-  Coins, RefreshCw, AlertTriangle, ShieldCheck, X, Building, Briefcase, Calculator, LineChart, Network
+  Coins, RefreshCw, AlertTriangle, ShieldCheck, X, Building, Briefcase, Calculator, LineChart, Network, Sliders
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { ResonanceTower } from "./ResonanceTower";
 import { ItemStore } from "./ItemStore";
 import { UserResponse, AssetsResponse, DeviceOrder } from "../api/types";
+import { AdminPanel } from "./AdminPanel";
 
 interface MyCompanyProps {
   stats: UserStats;
@@ -73,6 +74,7 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
   const [showConfirmReset, setShowConfirmReset] = useState(false);
   const [companyName, setCompanyName] = useState<string>("我的 1 人算力公司");
   const [isEditingName, setIsEditingName] = useState(false);
+  const [showAdminPanel, setShowAdminPanel] = useState(false);
 
   const userIssuedTokens = useMemo(() => {
     return loadIssuedTokens();
@@ -869,6 +871,31 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
             </div>
           </div>
 
+          {/* Developer / Admin Control entry */}
+          <div className="bg-[#0b0e14]/40 border border-white/5 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/[0.01] rounded-full blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2.5 mb-3">
+              <span className="cyber-icon-wrapper p-1.5 text-slate-500 border-white/10 bg-white/5">
+                <Sliders className="size-4 text-slate-400" />
+              </span>
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-widest text-slate-300 font-sans">
+                  开发 / 管理员入口
+                </h3>
+                <p className="text-[10px] text-slate-505 font-mono mt-0.5">
+                  需要 Admin Token | 仅用于设备配置与测试环境管理
+                </p>
+              </div>
+            </div>
+            
+            <button
+              onClick={() => setShowAdminPanel(true)}
+              className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 hover:text-white text-xs font-bold transition-all cursor-pointer active:scale-95 flex items-center gap-2 font-sans"
+            >
+              <ShieldCheck className="size-3.5 text-cyan-400" /> 进入算力控制后台
+            </button>
+          </div>
+
           {/* System and recovery panel */}
           <div className="bg-gradient-to-br from-[#1a0f0f] to-[#0d0707] border border-red-500/20 rounded-2xl p-6 relative overflow-hidden backdrop-blur-md">
             <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/[0.02] rounded-full blur-2xl pointer-events-none" />
@@ -1009,6 +1036,11 @@ export const MyCompany: React.FC<MyCompanyProps> = ({
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Admin Panel Overlay */}
+      {showAdminPanel && (
+        <AdminPanel onClose={() => setShowAdminPanel(false)} />
+      )}
 
     </div>
   );

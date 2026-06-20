@@ -10,7 +10,9 @@ import {
   getSessionUser,
   createDefaultAssetAccounts,
   mapAssetAccounts,
-  AssetAccountRow
+  AssetAccountRow,
+  getSystemConfig,
+  setSystemConfig
 } from "./db";
 import {
   seedDeviceCatalog,
@@ -23,6 +25,7 @@ import {
 
 type Bindings = {
   DB: D1Database;
+  ADMIN_TOKEN?: string;
 };
 
 const app = new Hono<{ Bindings: Bindings }>();
@@ -186,32 +189,43 @@ app.get("/api/devices/catalog", async (c) => {
   try {
     await seedDeviceCatalog(c.env.DB);
     const catalog = await getDeviceCatalog(c.env.DB);
+    const globalYieldMultiplierStr = await getSystemConfig(c.env.DB, "GLOBAL_YIELD_MULTIPLIER", "1.0");
+    const globalYieldMultiplier = parseFloat(globalYieldMultiplierStr) || 1.0;
+
     return jsonResponse({
-      devices: catalog.map(d => ({
-        id: d.id,
-        code: d.code,
-        name: d.name,
-        deviceType: d.device_type,
-        baseHashpower: d.base_hashpower,
-        rentUsdt: d.rent_usdt,
-        rentR1: d.rent_r1,
-        durationSeconds: d.duration_seconds,
-        durationDays: d.duration_days,
-        isDemo: d.is_demo === 1,
-        displayTier: d.display_tier,
-        displayOrder: d.display_order,
-        refHardwareName: d.ref_hardware_name,
-        refSpecDescription: d.ref_spec_description,
-        marketPriceRange: d.market_price_range,
-        suitableScenarios: d.suitable_scenarios,
-        apiScenarios: d.api_scenarios,
-        dailyAiTokenYield: d.daily_ai_token_yield,
-        yieldMultiplier: d.yield_multiplier,
-        purchaseLimit: d.purchase_limit,
-        stockCount: d.stock_count,
-        isFeatured: d.is_featured,
-        disclaimerText: d.disclaimer_text,
-      })),
+      globalYieldMultiplier,
+      devices: catalog.map(d => {
+        const dailyYield = d.daily_ai_token_yield ?? 0;
+        const yieldMult = d.yield_multiplier ?? 1.0;
+        const effectiveDailyAiTokenYield = dailyYield * yieldMult * globalYieldMultiplier;
+
+        return {
+          id: d.id,
+          code: d.code,
+          name: d.name,
+          deviceType: d.device_type,
+          baseHashpower: d.base_hashpower,
+          rentUsdt: d.rent_usdt,
+          rentR1: d.rent_r1,
+          durationSeconds: d.duration_seconds,
+          durationDays: d.duration_days,
+          isDemo: d.is_demo === 1,
+          displayTier: d.display_tier,
+          displayOrder: d.display_order,
+          refHardwareName: d.ref_hardware_name,
+          refSpecDescription: d.ref_spec_description,
+          marketPriceRange: d.market_price_range,
+          suitableScenarios: d.suitable_scenarios,
+          apiScenarios: d.api_scenarios,
+          dailyAiTokenYield: dailyYield,
+          yieldMultiplier: yieldMult,
+          effectiveDailyAiTokenYield,
+          purchaseLimit: d.purchase_limit,
+          stockCount: d.stock_count,
+          isFeatured: d.is_featured,
+          disclaimerText: d.disclaimer_text,
+        };
+      }),
     });
   } catch (e: any) {
     console.error("Fetch catalog error:", e);
@@ -357,4 +371,419 @@ app.get("/api/mining/records", async (c) => {
   }
 });
 
+// --- ADMIN API ENDPOINTS (PR-4D) ---
+
+function verifyAdminAuth(c: any): Response | null {
+  const adminToken = c.env.ADMIN_TOKEN;
+  if (!adminToken) {
+    return errorResponse("SERVER_ERROR", "Admin environment not configured (fail closed)", 500);
+  }
+  const token = getBearerToken(c.req.raw.headers);
+  if (!token || token !== adminToken) {
+    return errorResponse("UNAUTHORIZED", "Invalid or missing Admin Token", 401);
+  }
+  return null;
+}
+
+// Map database snake_case row to frontend camelCase object
+function mapDbDeviceToAdminModel(d: any) {
+  return {
+    id: d.id,
+    code: d.code,
+    name: d.name,
+    deviceType: d.device_type,
+    baseHashpower: d.base_hashpower,
+    rentUsdt: d.rent_usdt,
+    rentR1: d.rent_r1,
+    durationSeconds: d.duration_seconds,
+    durationDays: d.duration_days,
+    isDemo: d.is_demo === 1,
+    isActive: d.is_active === 1,
+    displayTier: d.display_tier,
+    displayOrder: d.display_order,
+    refHardwareName: d.ref_hardware_name,
+    refSpecDescription: d.ref_spec_description,
+    marketPriceRange: d.market_price_range,
+    suitableScenarios: d.suitable_scenarios,
+    apiScenarios: d.api_scenarios,
+    dailyAiTokenYield: d.daily_ai_token_yield,
+    yieldMultiplier: d.yield_multiplier,
+    purchaseLimit: d.purchase_limit,
+    stockCount: d.stock_count,
+    isFeatured: d.is_featured === 1,
+    disclaimerText: d.disclaimer_text,
+    createdAt: d.created_at,
+    updatedAt: d.updated_at
+  };
+}
+
+// GET /api/admin/devices
+app.get("/api/admin/devices", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  try {
+    const { results } = await c.env.DB
+      .prepare("SELECT * FROM devices ORDER BY display_order ASC, created_at DESC")
+      .all();
+
+    return jsonResponse({
+      devices: (results || []).map(mapDbDeviceToAdminModel)
+    });
+  } catch (e: any) {
+    console.error("Admin fetch devices error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch admin devices: " + e.message, 500);
+  }
+});
+
+// POST /api/admin/devices
+app.post("/api/admin/devices", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+
+    // Required fields check
+    const required = ['id', 'code', 'name', 'rentUsdt', 'baseHashpower', 'durationDays', 'dailyAiTokenYield'];
+    for (const field of required) {
+      if (body[field] === undefined || body[field] === null || body[field] === "") {
+        return errorResponse("BAD_REQUEST", `Missing required field: ${field}`, 400);
+      }
+    }
+
+    // Boundary check
+    if (body.rentUsdt < 0) return errorResponse("BAD_REQUEST", "rentUsdt must be >= 0", 400);
+    if (body.baseHashpower < 0) return errorResponse("BAD_REQUEST", "baseHashpower must be >= 0", 400);
+    if (body.durationDays < 0) return errorResponse("BAD_REQUEST", "durationDays must be >= 0", 400);
+    if (body.dailyAiTokenYield < 0) return errorResponse("BAD_REQUEST", "dailyAiTokenYield must be >= 0", 400);
+
+    if (body.yieldMultiplier !== undefined && body.yieldMultiplier !== null) {
+      if (body.yieldMultiplier < 0 || body.yieldMultiplier > 100) {
+        return errorResponse("BAD_REQUEST", "yieldMultiplier must be between 0 and 100", 400);
+      }
+    }
+    if (body.purchaseLimit !== undefined && body.purchaseLimit !== null && body.purchaseLimit < 0) {
+      return errorResponse("BAD_REQUEST", "purchaseLimit must be >= 0", 400);
+    }
+    if (body.stockCount !== undefined && body.stockCount !== null && body.stockCount < 0) {
+      return errorResponse("BAD_REQUEST", "stockCount must be >= 0", 400);
+    }
+    if (body.displayOrder !== undefined && body.displayOrder !== null && body.displayOrder < 0) {
+      return errorResponse("BAD_REQUEST", "displayOrder must be >= 0", 400);
+    }
+
+    // Check conflict
+    const existing = await c.env.DB
+      .prepare("SELECT id FROM devices WHERE id = ? LIMIT 1")
+      .bind(body.id)
+      .first();
+    if (existing) {
+      return errorResponse("CONFLICT", "Device template with this ID already exists", 409);
+    }
+
+    const now = new Date().toISOString();
+    const id = body.id;
+    const code = body.code;
+    const name = body.name;
+    const device_type = body.deviceType || "infer";
+    const base_hashpower = body.baseHashpower;
+    const rent_usdt = body.rentUsdt;
+    const rent_r1 = body.rentR1 || 0;
+    const duration_seconds = body.durationSeconds || null;
+    const duration_days = body.durationDays;
+    const is_demo = body.isDemo ? 1 : 0;
+    const is_active = body.isActive !== false ? 1 : 0;
+    const display_tier = body.displayTier || null;
+    const display_order = body.displayOrder || 0;
+    const ref_hardware_name = body.refHardwareName || null;
+    const ref_spec_description = body.refSpecDescription || null;
+    const market_price_range = body.marketPriceRange || null;
+    const suitable_scenarios = body.suitableScenarios || null;
+    const api_scenarios = body.apiScenarios || null;
+    const daily_ai_token_yield = body.dailyAiTokenYield;
+    const yield_multiplier = body.yieldMultiplier !== undefined ? body.yieldMultiplier : 1.0;
+    const purchase_limit = body.purchaseLimit !== undefined ? body.purchaseLimit : 5;
+    const stock_count = body.stockCount !== undefined ? body.stockCount : 999;
+    const is_featured = body.isFeatured ? 1 : 0;
+    const disclaimer_text = body.disclaimerText || null;
+
+    await c.env.DB
+      .prepare(
+        `INSERT INTO devices (
+          id, code, name, device_type, base_hashpower, rent_usdt, rent_r1,
+          duration_seconds, duration_days, is_demo, is_active,
+          display_tier, display_order, ref_hardware_name, ref_spec_description,
+          market_price_range, suitable_scenarios, api_scenarios, daily_ai_token_yield,
+          yield_multiplier, purchase_limit, stock_count, is_featured, disclaimer_text,
+          created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        id, code, name, device_type, base_hashpower, rent_usdt, rent_r1,
+        duration_seconds, duration_days, is_demo, is_active,
+        display_tier, display_order, ref_hardware_name, ref_spec_description,
+        market_price_range, suitable_scenarios, api_scenarios, daily_ai_token_yield,
+        yield_multiplier, purchase_limit, stock_count, is_featured, disclaimer_text,
+        now, now
+      )
+      .run();
+
+    // Log event
+    const eventId = generateId("evt");
+    const eventPayload = JSON.stringify({
+      action: "create",
+      target_type: "device",
+      target_id: id,
+      before_json: null,
+      after_json: body
+    });
+    await c.env.DB
+      .prepare("INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, NULL, 'admin_device_create', ?, ?)")
+      .bind(eventId, eventPayload, now)
+      .run();
+
+    return jsonResponse({ success: true, id });
+  } catch (e: any) {
+    console.error("Admin create device error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to create device: " + e.message, 500);
+  }
+});
+
+// PUT /api/admin/devices/:id
+app.put("/api/admin/devices/:id", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  const id = c.req.param("id");
+
+  try {
+    const existing = await c.env.DB
+      .prepare("SELECT * FROM devices WHERE id = ? LIMIT 1")
+      .bind(id)
+      .first();
+    if (!existing) {
+      return errorResponse("NOT_FOUND", "Device template not found", 404);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+
+    // Numerical checks
+    if (body.rentUsdt !== undefined && body.rentUsdt < 0) return errorResponse("BAD_REQUEST", "rentUsdt must be >= 0", 400);
+    if (body.baseHashpower !== undefined && body.baseHashpower < 0) return errorResponse("BAD_REQUEST", "baseHashpower must be >= 0", 400);
+    if (body.durationDays !== undefined && body.durationDays < 0) return errorResponse("BAD_REQUEST", "durationDays must be >= 0", 400);
+    if (body.dailyAiTokenYield !== undefined && body.dailyAiTokenYield < 0) return errorResponse("BAD_REQUEST", "dailyAiTokenYield must be >= 0", 400);
+
+    if (body.yieldMultiplier !== undefined && body.yieldMultiplier !== null) {
+      if (body.yieldMultiplier < 0 || body.yieldMultiplier > 100) {
+        return errorResponse("BAD_REQUEST", "yieldMultiplier must be between 0 and 100", 400);
+      }
+    }
+    if (body.purchaseLimit !== undefined && body.purchaseLimit !== null && body.purchaseLimit < 0) {
+      return errorResponse("BAD_REQUEST", "purchaseLimit must be >= 0", 400);
+    }
+    if (body.stockCount !== undefined && body.stockCount !== null && body.stockCount < 0) {
+      return errorResponse("BAD_REQUEST", "stockCount must be >= 0", 400);
+    }
+    if (body.displayOrder !== undefined && body.displayOrder !== null && body.displayOrder < 0) {
+      return errorResponse("BAD_REQUEST", "displayOrder must be >= 0", 400);
+    }
+
+    const now = new Date().toISOString();
+    
+    // Map whitelist updates, preserving old fields if omitted
+    const code = body.code !== undefined ? body.code : existing.code;
+    const name = body.name !== undefined ? body.name : existing.name;
+    const device_type = body.deviceType !== undefined ? body.deviceType : existing.device_type;
+    const base_hashpower = body.baseHashpower !== undefined ? body.baseHashpower : existing.base_hashpower;
+    const rent_usdt = body.rentUsdt !== undefined ? body.rentUsdt : existing.rent_usdt;
+    const rent_r1 = body.rentR1 !== undefined ? body.rentR1 : existing.rent_r1;
+    const duration_seconds = body.durationSeconds !== undefined ? body.durationSeconds : existing.duration_seconds;
+    const duration_days = body.durationDays !== undefined ? body.durationDays : existing.duration_days;
+    const is_demo = body.isDemo !== undefined ? (body.isDemo ? 1 : 0) : existing.is_demo;
+    const is_active = body.isActive !== undefined ? (body.isActive ? 1 : 0) : existing.is_active;
+    const display_tier = body.displayTier !== undefined ? body.displayTier : existing.display_tier;
+    const display_order = body.displayOrder !== undefined ? body.displayOrder : existing.display_order;
+    const ref_hardware_name = body.refHardwareName !== undefined ? body.refHardwareName : existing.ref_hardware_name;
+    const ref_spec_description = body.refSpecDescription !== undefined ? body.refSpecDescription : existing.ref_spec_description;
+    const market_price_range = body.marketPriceRange !== undefined ? body.marketPriceRange : existing.market_price_range;
+    const suitable_scenarios = body.suitableScenarios !== undefined ? body.suitableScenarios : existing.suitable_scenarios;
+    const api_scenarios = body.apiScenarios !== undefined ? body.apiScenarios : existing.api_scenarios;
+    const daily_ai_token_yield = body.dailyAiTokenYield !== undefined ? body.dailyAiTokenYield : existing.daily_ai_token_yield;
+    const yield_multiplier = body.yieldMultiplier !== undefined ? body.yieldMultiplier : existing.yield_multiplier;
+    const purchase_limit = body.purchaseLimit !== undefined ? body.purchaseLimit : existing.purchase_limit;
+    const stock_count = body.stockCount !== undefined ? body.stockCount : existing.stock_count;
+    const is_featured = body.isFeatured !== undefined ? (body.isFeatured ? 1 : 0) : existing.is_featured;
+    const disclaimer_text = body.disclaimerText !== undefined ? body.disclaimerText : existing.disclaimer_text;
+
+    await c.env.DB
+      .prepare(
+        `UPDATE devices SET
+          code = ?, name = ?, device_type = ?, base_hashpower = ?, rent_usdt = ?, rent_r1 = ?,
+          duration_seconds = ?, duration_days = ?, is_demo = ?, is_active = ?,
+          display_tier = ?, display_order = ?, ref_hardware_name = ?, ref_spec_description = ?,
+          market_price_range = ?, suitable_scenarios = ?, api_scenarios = ?, daily_ai_token_yield = ?,
+          yield_multiplier = ?, purchase_limit = ?, stock_count = ?, is_featured = ?, disclaimer_text = ?,
+          updated_at = ?
+         WHERE id = ?`
+      )
+      .bind(
+        code, name, device_type, base_hashpower, rent_usdt, rent_r1,
+        duration_seconds, duration_days, is_demo, is_active,
+        display_tier, display_order, ref_hardware_name, ref_spec_description,
+        market_price_range, suitable_scenarios, api_scenarios, daily_ai_token_yield,
+        yield_multiplier, purchase_limit, stock_count, is_featured, disclaimer_text,
+        now, id
+      )
+      .run();
+
+    // Log event
+    const eventId = generateId("evt");
+    const eventPayload = JSON.stringify({
+      action: "update",
+      target_type: "device",
+      target_id: id,
+      before_json: mapDbDeviceToAdminModel(existing),
+      after_json: body
+    });
+    await c.env.DB
+      .prepare("INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, NULL, 'admin_device_update', ?, ?)")
+      .bind(eventId, eventPayload, now)
+      .run();
+
+    return jsonResponse({ success: true });
+  } catch (e: any) {
+    console.error("Admin update device error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to update device: " + e.message, 500);
+  }
+});
+
+// PATCH /api/admin/devices/:id/status
+app.patch("/api/admin/devices/:id/status", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  const id = c.req.param("id");
+
+  try {
+    const existing = await c.env.DB
+      .prepare("SELECT * FROM devices WHERE id = ? LIMIT 1")
+      .bind(id)
+      .first();
+    if (!existing) {
+      return errorResponse("NOT_FOUND", "Device template not found", 404);
+    }
+
+    const body = await c.req.json().catch(() => ({}));
+    if (body.isActive === undefined) {
+      return errorResponse("BAD_REQUEST", "Missing isActive parameter in body", 400);
+    }
+
+    const now = new Date().toISOString();
+    const isActive = body.isActive ? 1 : 0;
+
+    await c.env.DB
+      .prepare("UPDATE devices SET is_active = ?, updated_at = ? WHERE id = ?")
+      .bind(isActive, now, id)
+      .run();
+
+    // Log event
+    const eventId = generateId("evt");
+    const eventPayload = JSON.stringify({
+      action: "toggle_status",
+      target_type: "device",
+      target_id: id,
+      before_json: { isActive: existing.is_active === 1 },
+      after_json: { isActive: body.isActive }
+    });
+    await c.env.DB
+      .prepare("INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, NULL, 'admin_device_status_change', ?, ?)")
+      .bind(eventId, eventPayload, now)
+      .run();
+
+    return jsonResponse({ success: true });
+  } catch (e: any) {
+    console.error("Admin toggle device status error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to toggle status: " + e.message, 500);
+  }
+});
+
+// GET /api/admin/config
+app.get("/api/admin/config", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  try {
+    const globalYieldMultiplierStr = await getSystemConfig(c.env.DB, "GLOBAL_YIELD_MULTIPLIER", "1.0");
+    const globalYieldMultiplier = parseFloat(globalYieldMultiplierStr) || 1.0;
+
+    return jsonResponse({ globalYieldMultiplier });
+  } catch (e: any) {
+    console.error("Admin fetch config error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch config: " + e.message, 500);
+  }
+});
+
+// PUT /api/admin/config
+app.put("/api/admin/config", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  try {
+    const body = await c.req.json().catch(() => ({}));
+    if (body.globalYieldMultiplier === undefined) {
+      return errorResponse("BAD_REQUEST", "Missing globalYieldMultiplier in body", 400);
+    }
+
+    const value = body.globalYieldMultiplier;
+    if (value < 0 || value > 100) {
+      return errorResponse("BAD_REQUEST", "globalYieldMultiplier must be between 0 and 100", 400);
+    }
+
+    const now = new Date().toISOString();
+    const beforeVal = await getSystemConfig(c.env.DB, "GLOBAL_YIELD_MULTIPLIER", "1.0");
+
+    await setSystemConfig(c.env.DB, "GLOBAL_YIELD_MULTIPLIER", String(value));
+
+    // Log event
+    const eventId = generateId("evt");
+    const eventPayload = JSON.stringify({
+      action: "update_config",
+      target_type: "config",
+      target_id: "GLOBAL_YIELD_MULTIPLIER",
+      before_json: { globalYieldMultiplier: parseFloat(beforeVal) || 1.0 },
+      after_json: { globalYieldMultiplier: value }
+    });
+    await c.env.DB
+      .prepare("INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, NULL, 'admin_config_update', ?, ?)")
+      .bind(eventId, eventPayload, now)
+      .run();
+
+    return jsonResponse({ success: true });
+  } catch (e: any) {
+    console.error("Admin set config error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to set config: " + e.message, 500);
+  }
+});
+
+// GET /api/admin/events
+app.get("/api/admin/events", async (c) => {
+  const authErr = verifyAdminAuth(c);
+  if (authErr) return authErr;
+
+  try {
+    const { results } = await c.env.DB
+      .prepare("SELECT * FROM system_events WHERE event_type LIKE 'admin_%' ORDER BY created_at DESC LIMIT 100")
+      .all();
+
+    return jsonResponse({
+      events: results || []
+    });
+  } catch (e: any) {
+    console.error("Admin fetch events error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch admin audit events: " + e.message, 500);
+  }
+});
+
 export default app;
+

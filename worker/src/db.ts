@@ -171,3 +171,34 @@ export function mapAssetAccounts(rows: AssetAccountRow[]) {
 
   return result;
 }
+
+export async function getSystemConfig(
+  db: D1Database,
+  key: string,
+  defaultValue: string
+): Promise<string> {
+  try {
+    const row = await db
+      .prepare("SELECT value FROM system_configs WHERE key = ? LIMIT 1")
+      .bind(key)
+      .first<{ value: string }>();
+    return row ? row.value : defaultValue;
+  } catch (e) {
+    return defaultValue;
+  }
+}
+
+export async function setSystemConfig(
+  db: D1Database,
+  key: string,
+  value: string
+): Promise<void> {
+  const now = new Date().toISOString();
+  await db
+    .prepare(
+      "INSERT INTO system_configs (key, value, updated_at) VALUES (?, ?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at"
+    )
+    .bind(key, value, now)
+    .run();
+}
+

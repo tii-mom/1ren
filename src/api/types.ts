@@ -62,6 +62,7 @@ export interface DeviceCatalogItem {
   stockCount?: number;
   isFeatured?: number;
   disclaimerText?: string | null;
+  effectiveDailyAiTokenYield?: number;
 }
 
 export interface DeviceOrder {
@@ -78,6 +79,7 @@ export interface DeviceOrder {
 }
 
 export interface DeviceCatalogResponse {
+  globalYieldMultiplier?: number;
   devices: DeviceCatalogItem[];
 }
 

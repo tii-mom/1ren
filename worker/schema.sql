@@ -119,3 +119,11 @@ CREATE INDEX IF NOT EXISTS idx_device_orders_status ON device_orders(status);
 CREATE INDEX IF NOT EXISTS idx_device_orders_expires_at ON device_orders(expires_at);
 CREATE INDEX IF NOT EXISTS idx_mining_records_user_id ON mining_records(user_id);
 CREATE INDEX IF NOT EXISTS idx_mining_records_created_at ON mining_records(created_at);
+
+-- System Configs Table
+CREATE TABLE IF NOT EXISTS system_configs (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
