@@ -49,6 +49,19 @@ export interface DeviceCatalogItem {
   durationSeconds: number | null;
   durationDays: number | null;
   isDemo: boolean;
+  displayTier?: string | null;
+  displayOrder?: number;
+  refHardwareName?: string | null;
+  refSpecDescription?: string | null;
+  marketPriceRange?: string | null;
+  suitableScenarios?: string | null;
+  apiScenarios?: string | null;
+  dailyAiTokenYield?: number;
+  yieldMultiplier?: number;
+  purchaseLimit?: number;
+  stockCount?: number;
+  isFeatured?: number;
+  disclaimerText?: string | null;
 }
 
 export interface DeviceOrder {

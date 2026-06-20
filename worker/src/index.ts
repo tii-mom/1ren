@@ -184,11 +184,8 @@ app.get("/api/assets", async (c) => {
 // GET /api/devices/catalog
 app.get("/api/devices/catalog", async (c) => {
   try {
-    let catalog = await getDeviceCatalog(c.env.DB);
-    if (catalog.length === 0) {
-      await seedDeviceCatalog(c.env.DB);
-      catalog = await getDeviceCatalog(c.env.DB);
-    }
+    await seedDeviceCatalog(c.env.DB);
+    const catalog = await getDeviceCatalog(c.env.DB);
     return jsonResponse({
       devices: catalog.map(d => ({
         id: d.id,
@@ -201,6 +198,19 @@ app.get("/api/devices/catalog", async (c) => {
         durationSeconds: d.duration_seconds,
         durationDays: d.duration_days,
         isDemo: d.is_demo === 1,
+        displayTier: d.display_tier,
+        displayOrder: d.display_order,
+        refHardwareName: d.ref_hardware_name,
+        refSpecDescription: d.ref_spec_description,
+        marketPriceRange: d.market_price_range,
+        suitableScenarios: d.suitable_scenarios,
+        apiScenarios: d.api_scenarios,
+        dailyAiTokenYield: d.daily_ai_token_yield,
+        yieldMultiplier: d.yield_multiplier,
+        purchaseLimit: d.purchase_limit,
+        stockCount: d.stock_count,
+        isFeatured: d.is_featured,
+        disclaimerText: d.disclaimer_text,
       })),
     });
   } catch (e: any) {
