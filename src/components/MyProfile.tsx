@@ -9,7 +9,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { ResonanceTower } from "./ResonanceTower";
 import { ItemStore } from "./ItemStore";
-import { UserResponse, AssetsResponse } from "../api/types";
+import { UserResponse, AssetsResponse, DeviceOrder } from "../api/types";
 
 export const renderBadgeIcon = (badgeId: string, className = "size-8", isActive = true) => {
   const stroke = isActive ? (
@@ -62,6 +62,7 @@ interface MyProfileProps {
   backendConnected: boolean;
   backendUser: UserResponse | null;
   backendAssets: AssetsResponse | null;
+  backendDevices: DeviceOrder[];
   backendError: string | null;
   backendLoading: boolean;
   onConnectBackend: (referrerCode?: string) => Promise<void>;
@@ -87,6 +88,7 @@ export const MyProfile: React.FC<MyProfileProps> = ({
   backendConnected,
   backendUser,
   backendAssets,
+  backendDevices,
   backendError,
   backendLoading,
   onConnectBackend,
@@ -1072,6 +1074,53 @@ export const MyProfile: React.FC<MyProfileProps> = ({
                       </div>
                     </div>
                   )}
+
+                  {/* 后端活跃设备 & 体验节点状态 (PR-3E) */}
+                  <div className="border-t border-white/5 pt-2 space-y-1.5 font-mono">
+                    <span className="text-[9px] text-slate-500 uppercase block tracking-wider font-bold">后端活跃设备快照 (Active Devices)</span>
+                    <div className="bg-slate-900/40 p-3 rounded-xl border border-white/5 space-y-2 text-[10px]">
+                      <div className="flex justify-between">
+                        <span className="text-slate-500 font-sans">活跃设备数量:</span>
+                        <span className="text-white font-bold">{backendDevices.length} 台</span>
+                      </div>
+                      
+                      {/* Check if demo node is active */}
+                      {(() => {
+                        const demoOrder = backendDevices.find(d => d.orderType === "DEMO" && d.status === "ACTIVE");
+                        if (demoOrder) {
+                          const expiresAtMs = new Date(demoOrder.expiresAt).getTime();
+                          const nowMs = Date.now();
+                          const isExpired = expiresAtMs <= nowMs;
+                          return (
+                            <div className="border-t border-white/5 pt-2 space-y-1">
+                              <div className="flex justify-between items-center">
+                                <span className="text-slate-500 font-sans">3分钟体验节点:</span>
+                                <span className={isExpired ? "text-red-400 font-bold" : "text-green-400 font-bold animate-pulse"}>
+                                  {isExpired ? "已过期满断电" : "已激活正常并网"}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-slate-500 font-sans">到期时间:</span>
+                                <span className="text-slate-300 text-[9px]">
+                                  {new Date(demoOrder.expiresAt).toLocaleTimeString()}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        } else {
+                          return (
+                            <div className="border-t border-white/5 pt-2 flex justify-between">
+                              <span className="text-slate-500 font-sans">3分钟体验节点:</span>
+                              <span className="text-slate-500">未激活</span>
+                            </div>
+                          );
+                        }
+                      })()}
+                    </div>
+                    <div className="bg-violet-950/20 border border-violet-500/20 text-violet-400 p-2 rounded-xl text-[10px] leading-relaxed font-sans">
+                      ⚠️ 只读后端测试设备状态，不影响本地运行的矿机。
+                    </div>
+                  </div>
                 </div>
               )}
 
