@@ -305,7 +305,7 @@ export const MinerStore: React.FC<MinerStoreProps> = ({
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 hover:text-slate-950 font-extrabold hover:bg-cyan-400 text-xs shadow-[0_2px_10px_rgba(6,182,212,0.15)] transition-all cursor-pointer hover:scale-105"
         >
           <Cpu className="size-4" />
-          📦 对比 5 款规格参考实例技术参数 (ROI Spec Table)
+          📦 对比 5 款规格参考实例技术参数 (Virtual Instance Specs)
         </button>
       </div>
 
