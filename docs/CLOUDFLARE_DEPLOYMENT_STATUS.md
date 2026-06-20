@@ -12,12 +12,36 @@
 
 ---
 
+## Custom Domain
+
+| Domain | Target | Purpose |
+| :--- | :--- | :--- |
+| `tai.lat` | Cloudflare Pages (`1ren`) | 前端生产域名 |
+| `api.tai.lat` | Cloudflare Worker (`r1-growth-worker`) | 后端 API 域名 |
+
+### DNS Records (Cloudflare Zone: tai.lat)
+
+| Record | Type | Content | Proxied |
+| :--- | :--- | :--- | :--- |
+| `tai.lat` | CNAME | `1ren.pages.dev` | ✅ |
+| `api.tai.lat` | AAAA | Cloudflare Workers (auto-managed) | ✅ |
+
+### SSL / Custom Domain Status
+
+| Domain | Status | Validation | Verification |
+| :--- | :--- | :--- | :--- |
+| `tai.lat` (Pages) | `active` | `active` | `active` |
+| `api.tai.lat` (Worker custom_domain) | `active` | — | — |
+
+---
+
 ## Backend (Cloudflare Worker)
 
 | Item | Value |
 | :--- | :--- |
 | Worker name | `r1-growth-worker` |
-| Worker URL | `https://r1-growth-worker.348421501.workers.dev` |
+| Worker custom domain | `https://api.tai.lat` |
+| Worker fallback URL | `https://r1-growth-worker.348421501.workers.dev` |
 | D1 database name | `1ren-db` |
 | D1 region | APAC |
 | D1 binding | `DB` |
@@ -52,39 +76,40 @@
 | Item | Value |
 | :--- | :--- |
 | Pages project name | `1ren` |
-| Pages production URL | `https://1ren.pages.dev` |
+| Pages custom domain | `https://tai.lat` |
+| Pages fallback URL | `https://1ren.pages.dev` |
 | Build tool | Vite |
-| Build command | `VITE_API_BASE_URL=<worker_url> npm run build` |
+| Build command | `VITE_API_BASE_URL=https://api.tai.lat npm run build` |
 | Output directory | `dist` |
-| API Base URL | Worker production URL (set via `VITE_API_BASE_URL` at build time) |
+| API Base URL | `https://api.tai.lat` (set via `VITE_API_BASE_URL` at build time) |
 
 ---
 
 ## Smoke Test Results
 
-### Worker API
+### Worker API (via `api.tai.lat`)
 
 | Endpoint | Expected | Result |
 | :--- | :--- | :--- |
-| `GET /api/health` | 200 | ✅ PASS |
-| `GET /api/devices/catalog` | 200, returns device list | ✅ PASS (6 devices returned) |
+| `GET /api/health` | 200, `"service":"1ren-backend-d1"` | ✅ PASS |
+| `GET /api/devices/catalog` | 200, returns device list | ✅ PASS (6 devices: L0-L5) |
 | `GET /api/admin/devices` (no token) | 401 | ✅ PASS |
 | `GET /api/admin/devices` (wrong token) | 401 | ✅ PASS |
 
-### Frontend
+### Frontend (via `tai.lat`)
 
 | Check | Result |
 | :--- | :--- |
-| `https://1ren.pages.dev` returns 200 | ✅ PASS |
+| `https://tai.lat` returns 200 | ✅ PASS |
 | HTML contains correct JS bundle hash | ✅ PASS |
-| JS bundle contains production Worker URL | ✅ PASS |
+| JS bundle contains `api.tai.lat` | ✅ PASS |
 
 ### CORS
 
 | Check | Result |
 | :--- | :--- |
 | Worker returns `access-control-allow-origin: *` | ✅ PASS |
-| Cross-origin request from Pages to Worker | ✅ PASS |
+| Cross-origin from `tai.lat` to `api.tai.lat` | ✅ PASS |
 
 ---
 
@@ -92,7 +117,7 @@
 
 The following minimal changes were made to support production deployment:
 
-1. **`worker/wrangler.toml`**: Updated `database_name` and `database_id` to point to production D1.
+1. **`worker/wrangler.toml`**: Updated `database_name` and `database_id` to point to production D1; added `routes` with `api.tai.lat` custom domain.
 2. **`src/api/admin.ts`**: Exported `API_BASE_URL` constant.
 3. **`src/components/AdminPanel.tsx`**: Replaced hardcoded `http://localhost:8787` fetch URL with dynamic `API_BASE_URL` import.
 
@@ -115,5 +140,6 @@ The following minimal changes were made to support production deployment:
 
 - The wrangler.toml file contains the D1 `database_id`. This is a non-secret identifier required by Cloudflare for binding and is safe to commit.
 - For production ADMIN_TOKEN management, use `npx wrangler secret put ADMIN_TOKEN` from the `worker/` directory.
-- Frontend builds require setting `VITE_API_BASE_URL` to the Worker URL before running `npm run build`.
-- The Worker CORS policy is currently set to `origin: "*"`. This is acceptable for the current MVP stage but should be restricted to the Pages domain in production hardening.
+- Frontend builds require setting `VITE_API_BASE_URL=https://api.tai.lat` before running `npm run build`.
+- The Worker CORS policy is currently set to `origin: "*"`. This is acceptable for the current MVP stage but should be restricted to `https://tai.lat` in production hardening.
+- An old zone route (`api.tai.lat/*` → `richlegion-api`) was deleted to allow the new Worker custom domain binding to take effect.
