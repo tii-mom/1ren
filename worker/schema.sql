@@ -1,32 +1,32 @@
 -- Users Table
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    tg_id INTEGER UNIQUE,
-    invite_code TEXT UNIQUE NOT NULL,
-    referrer_id TEXT,
-    wallet_address TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    tg_id TEXT NULL,
+    invite_code TEXT NOT NULL UNIQUE,
+    referrer_id TEXT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
 );
 
 -- Sessions Table
 CREATE TABLE IF NOT EXISTS sessions (
-    token TEXT PRIMARY KEY,
+    id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
-    ip_address TEXT,
-    expires_at DATETIME NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    session_token TEXT NOT NULL UNIQUE,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    revoked_at TEXT NULL
 );
 
 -- Asset Accounts Table
 CREATE TABLE IF NOT EXISTS asset_accounts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id TEXT PRIMARY KEY,
     user_id TEXT NOT NULL,
     asset_type TEXT NOT NULL,
-    balance REAL NOT NULL DEFAULT 0.0,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, asset_type),
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    balance REAL NOT NULL DEFAULT 0,
+    locked_balance REAL NOT NULL DEFAULT 0,
+    updated_at TEXT NOT NULL,
+    UNIQUE(user_id, asset_type)
 );
 
 -- Ledger Entries Table
@@ -37,23 +37,22 @@ CREATE TABLE IF NOT EXISTS ledger_entries (
     amount REAL NOT NULL,
     action TEXT NOT NULL,
     description TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    created_at TEXT NOT NULL
 );
 
 -- System Events Table
 CREATE TABLE IF NOT EXISTS system_events (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
+    id TEXT PRIMARY KEY,
+    user_id TEXT NULL,
     event_type TEXT NOT NULL,
-    payload TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    payload_json TEXT NULL,
+    created_at TEXT NOT NULL
 );
 
 -- Create Indexes
-CREATE INDEX IF NOT EXISTS idx_users_tg_id ON users(tg_id);
-CREATE INDEX IF NOT EXISTS idx_users_referrer_id ON users(referrer_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(session_token);
 CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_asset_accounts_user_id ON asset_accounts(user_id);
 CREATE INDEX IF NOT EXISTS idx_ledger_entries_user_id ON ledger_entries(user_id);
-CREATE INDEX IF NOT EXISTS idx_ledger_entries_created_at ON ledger_entries(created_at);
-CREATE INDEX IF NOT EXISTS idx_system_events_event_type ON system_events(event_type);
+CREATE INDEX IF NOT EXISTS idx_system_events_user_id ON system_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_users_invite_code ON users(invite_code);

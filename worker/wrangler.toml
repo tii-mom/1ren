@@ -4,5 +4,5 @@ compatibility_date = "2024-12-18"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "r1-growth-db"
+database_name = "r1-growth-dev"
 database_id = "r1-growth-db-id"

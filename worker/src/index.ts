@@ -1,7 +1,23 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import {
+  generateId,
+  generateSessionToken,
+  generateInviteCode,
+  jsonResponse,
+  errorResponse,
+  getBearerToken,
+  getSessionUser,
+  createDefaultAssetAccounts,
+  mapAssetAccounts,
+  AssetAccountRow
+} from "./db";
 
-const app = new Hono();
+type Bindings = {
+  DB: D1Database;
+};
+
+const app = new Hono<{ Bindings: Bindings }>();
 
 // Enable CORS for local and production compatibility
 app.use("/api/*", cors({
@@ -15,7 +31,7 @@ app.get("/api/health", (c) => {
   return c.json({
     status: "healthy",
     timestamp: new Date().toISOString(),
-    service: "1ren-backend-skeleton"
+    service: "1ren-backend-d1"
   });
 });
 
@@ -26,69 +42,135 @@ app.post("/api/session/create", async (c) => {
     const referrerCode = body.referrerCode || null;
     const tgInitData = body.tgInitData || null;
 
-    // Mock session and user database creation
-    const mockUserId = "usr-1002";
-    const mockSessionToken = "s_tok_mock_" + Math.random().toString(36).substring(2);
+    // TODO: Implement TG initData validation and signature checking (PR-3D)
+    // For now, we bypass TG validation and always create a new anonymous user.
+    // TG user deduplication and hash validation is deferred to PR-3D.
 
-    return c.json({
-      sessionToken: mockSessionToken,
-      user: {
-        id: mockUserId,
-        tgId: tgInitData ? 89234123 : null,
-        inviteCode: "CUBE654",
-        referrerId: referrerCode ? "usr-1001" : null,
-        createdAt: new Date().toISOString()
+    const now = new Date().toISOString();
+    let referrerId: string | null = null;
+
+    if (referrerCode) {
+      const referrer = await c.env.DB
+        .prepare("SELECT id FROM users WHERE invite_code = ? LIMIT 1")
+        .bind(referrerCode)
+        .first<{ id: string }>();
+      if (referrer) {
+        referrerId = referrer.id;
       }
+    }
+
+    const userId = generateId("usr");
+    const inviteCode = generateInviteCode();
+
+    // Create user in DB
+    await c.env.DB
+      .prepare(
+        "INSERT INTO users (id, tg_id, invite_code, referrer_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .bind(userId, null, inviteCode, referrerId, now, now)
+      .run();
+
+    // Create session in DB
+    const sessionId = generateId("ses");
+    const sessionToken = generateSessionToken();
+    // Expires in 30 days
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    await c.env.DB
+      .prepare(
+        "INSERT INTO sessions (id, user_id, session_token, expires_at, created_at, revoked_at) VALUES (?, ?, ?, ?, ?, NULL)"
+      )
+      .bind(sessionId, userId, sessionToken, expiresAt, now)
+      .run();
+
+    // Create default asset accounts
+    await createDefaultAssetAccounts(c.env.DB, userId, now);
+
+    // Write system event
+    const eventId = generateId("evt");
+    const payload = JSON.stringify({ referrerCode, tgInitData });
+    await c.env.DB
+      .prepare(
+        "INSERT INTO system_events (id, user_id, event_type, payload_json, created_at) VALUES (?, ?, ?, ?, ?)"
+      )
+      .bind(eventId, userId, "session_create", payload, now)
+      .run();
+
+    return jsonResponse({
+      sessionToken,
+      user: {
+        id: userId,
+        tgId: null,
+        inviteCode,
+        referrerId,
+        createdAt: now,
+      },
     });
-  } catch (e) {
-    return c.json({ error: "Invalid request payload" }, 400);
+  } catch (e: any) {
+    console.error("Session creation error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to create session: " + e.message, 500);
   }
 });
 
-// Mock Auth Helper
-const getMockUser = (authHeader: string | undefined) => {
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return null;
-  }
-  return {
-    id: "usr-1002",
-    tgId: null,
-    inviteCode: "CUBE654",
-    referrerName: "初始推荐节点",
-    createdAt: "2026-06-20T12:00:00Z"
-  };
-};
-
 // GET /api/me
-app.get("/api/me", (c) => {
-  const auth = c.req.header("Authorization");
-  const user = getMockUser(auth);
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
+app.get("/api/me", async (c) => {
+  try {
+    const token = getBearerToken(c.req.raw.headers);
+    if (!token) {
+      return errorResponse("UNAUTHORIZED", "Missing or invalid Authorization header", 401);
+    }
+
+    const sessionData = await getSessionUser(c.env.DB, token);
+    if (!sessionData) {
+      return errorResponse("UNAUTHORIZED", "Invalid, expired, or revoked session token", 401);
+    }
+
+    const { user } = sessionData;
+    return jsonResponse({
+      id: user.id,
+      tgId: user.tg_id,
+      inviteCode: user.invite_code,
+      referrerId: user.referrer_id,
+      createdAt: user.created_at,
+    });
+  } catch (e: any) {
+    console.error("Fetch me error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch user profile", 500);
   }
-  return c.json(user);
 });
 
 // GET /api/assets
-app.get("/api/assets", (c) => {
-  const auth = c.req.header("Authorization");
-  const user = getMockUser(auth);
-  if (!user) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
+app.get("/api/assets", async (c) => {
+  try {
+    const token = getBearerToken(c.req.raw.headers);
+    if (!token) {
+      return errorResponse("UNAUTHORIZED", "Missing or invalid Authorization header", 401);
+    }
 
-  // Returns mock user assets for MVP frontend testing
-  return c.json({
-    usdt: 500.00,
-    r1: 150.00,
-    aiToken: 32.54,
-    shards: 0.00,
-    coolantCount: 1,
-    hashCrystals: 0,
-    baseHashpower: 50.00,
-    teamHashpower: 0.00,
-    level: "S0 自有设备节点"
-  });
+    const sessionData = await getSessionUser(c.env.DB, token);
+    if (!sessionData) {
+      return errorResponse("UNAUTHORIZED", "Invalid, expired, or revoked session token", 401);
+    }
+
+    const { user } = sessionData;
+
+    const { results } = await c.env.DB
+      .prepare("SELECT * FROM asset_accounts WHERE user_id = ?")
+      .bind(user.id)
+      .all<AssetAccountRow>();
+
+    const mapped = mapAssetAccounts(results || []);
+
+    return jsonResponse({
+      ...mapped,
+      baseHashpower: 50,
+      teamHashpower: 0,
+      level: "ZERO",
+    });
+  } catch (e: any) {
+    console.error("Fetch assets error:", e);
+    return errorResponse("SERVER_ERROR", "Failed to fetch user assets", 500);
+  }
 });
 
 export default app;
