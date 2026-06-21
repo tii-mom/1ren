@@ -51,8 +51,8 @@ export const Header: React.FC<HeaderProps> = ({
         
         {/* Brand visual logo */}
         <div className="flex items-center gap-1 sm:gap-3 group cursor-pointer" onClick={() => setCurrentTab("home")}>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-cyan-400 to-blue-600 rounded-lg flex items-center justify-center shadow-[0_0_12px_rgba(34,211,238,0.25)] group-hover:scale-105 transition-transform duration-300">
-            <Cpu stroke="url(#gradient-cyan-blue)" className="size-4 sm:size-6 icon-glow-cyan" />
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#090e1a]/80 border border-cyan-500/30 rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(34,211,238,0.25)] group-hover:scale-105 transition-transform duration-300 p-0.5 sm:p-1 overflow-hidden">
+            <img src="/logo.png" alt="1人算力有限公司 Logo" className="w-full h-full object-contain" />
           </div>
           <div className="leading-none">
             <h1 className="text-xs sm:text-xl font-bold tracking-tighter text-white uppercase flex items-center gap-0.5">
