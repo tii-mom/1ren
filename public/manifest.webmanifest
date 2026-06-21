@@ -1,0 +1,25 @@
+{
+  "id": "/?app=1ren-v1",
+  "name": "1人算力有限公司",
+  "short_name": "1人算力",
+  "description": "1人算力有限公司 · 共享AI算力网",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050711",
+  "theme_color": "#050711",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.png?v=1ren-20260621",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png?v=1ren-20260621",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
