@@ -142,4 +142,16 @@ The following minimal changes were made to support production deployment:
 - For production ADMIN_TOKEN management, use `npx wrangler secret put ADMIN_TOKEN` from the `worker/` directory.
 - Frontend builds require setting `VITE_API_BASE_URL=https://api.tai.lat` before running `npm run build`.
 - The Worker CORS policy is currently set to `origin: "*"`. This is acceptable for the current MVP stage but should be restricted to `https://tai.lat` in production hardening.
-- An old zone route (`api.tai.lat/*` → `richlegion-api`) was deleted to allow the new Worker custom domain binding to take effect.
+
+---
+
+## Domain Reset & Verification (2026-06-21)
+
+To ensure the production domain resolves stably, a complete domain reset and verification process was performed:
+- **Root Domain Re-binding**: `tai.lat` custom domain was fully detached and reattached to Pages project `1ren`.
+- **Legacy Cleanup**: Removed custom domain bindings from the legacy `taiprotocol-website` Pages project.
+- **Worker Routes & Domains**: Worker routes and custom domains were verified; `api.tai.lat` points exclusively to Worker `r1-growth-worker`, and all legacy Worker routes/domains mapping to `tai.lat` or `www.tai.lat` were cleared.
+- **www Subdomain**: `www.tai.lat` was intentionally left unbound.
+- **Cache Purging**: Initiated a zone-wide cache purge configuration review.
+- **Production Deployment URL**: Frontend deployed to https://9725cf66.1ren.pages.dev
+- **External Verification**: Verified that `tai.lat` external routing maps correctly to `1ren.pages.dev` and serves the 1ren site without any legacy content or TAI Protocol references.
